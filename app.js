@@ -1,63 +1,63 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwBIDKN21f3b3N0lxfuOTVlb6OfduAoFOasFHF4ObxLN1C6zV7JWgrDQvCkZTwSgfmtSw/exec";
-const CLAVE_KEY = "compras_clave";
+const API_URL = «https function toString() { [nativo código] }//script.google.com/macros/s/AKfycbwBIDKN21f3b3N0lxfuOTVlb6OfduAoFOasFHF4ObxLN1C6zV7JWgrDQvCkZTwSgfmtSw/exec»;
+const CLAVE_KEY = "3329";
 const CONFIG_KEY = "compras_config_cache";
 const DB_NOMBRE = "compras-offline";
-const DB_VERSION = 1;
-const TIENDA_COLA = "cola";
+const DB_VERSIÓN = 1;
+const TIENDA_COLA = "Cola";
 
-// ---------------------------------------------------------------------------------------------- utilidades
-const $ = (id) => document.getElementById(id);
+// -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+const $ = (id) => documento.getElementById(id);
 
-function mostrarToast(texto, ms = 3000) {
-  const t = $("toast");
+función mostrarTostada(texto, ms = 3000) {
+  const t = $("Tostada"function function toString() { [nativo código] } function toString() { [native code] }() { [nativo código] }() { [nativo código] };
   t.textContent = texto;
-  t.classList.remove("oculto");
-  clearTimeout(mostrarToast._t);
-  mostrarToast._t = setTimeout(() => t.classList.add("oculto"), ms);
+  t.classList.itar("oculto");
+  clearTimeout(mostrarTostada._t);
+  mostrarTostada._t = Tiempo de espera establecido(() => t.classList.añadir("oculto"), ms);
 }
 
-function hoyIso() {
-  const d = new Date();
-  const p = (n) => String(n).padStart(2, "0");
+función hoyIso() {
+  const d = nuevo Fecha();
+  const p = (n) => Cadena(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-function idNuevo() {
+función idNuevo() {
   if (crypto.randomUUID) return crypto.randomUUID();
-  return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+  return "id-" + Fecha.now().función function function function function toString() { [native code] }() { [nativo código] }() { [nativo código] }() { [nativo código] }() { [nativo código] }(36) + "-" + Math.random().función function function function function toString() { [native code] }() { [nativo código] }() { [nativo código] }() { [nativo código] }() { [nativo código] }(36).rebanada(2, 10);
 }
 
-function fileABase64(file) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result).split(",")[1]);
-    r.onerror = reject;
-    r.readAsDataURL(file);
+función archivoABase64(archivo) {
+  retorno nuevo Lo prometo.((solver, rechazar) => {
+    const r = nuevo Lector de archivos();
+    r.onload = () => solver(Cadena(r.resultado).dividir(",")[1]);
+    r.onerror = rechazar;
+    r.readAsDataURL(archivo);
   });
 }
 
-// ---------------------------------------------------------------------------------------------- llamadas al backend
-async function llamar(accion, datos = {}) {
+Llamadas al motor 
+ async función llamamar(accion, datos = {}) {
   const clave = localStorage.getItem(CLAVE_KEY);
-  const cuerpo = JSON.stringify(Object.assign({ clave, accion }, datos));
-  const resp = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: cuerpo,
+  const cuerpo = JSON.stringify(Objeto.asignar({ clave, accion }, datos));
+  const resp = Espera. Obtener(API_URL, {
+    método: "POST",
+    cabeceras: { "Tipo de contenido": "text/plain;charset=utf-8" },
+    cuerpo: cuerpo,
   });
-  if (!resp.ok) throw new Error("HTTP " + resp.status);
-  const json = await resp.json();
-  if (!json.ok) throw new Error(json.error || "Error desconocido");
-  return json;
+  si (!resp.ok) lanzar nuevo Error("HTTP" + resp.situación);
+  const json = Espera. resp.json();
+  si (!json.ok) lanzar nuevo Error(json.error || "Error desconocido");
+  retorno json;
 }
 
-// ---------------------------------------------------------------------------------------------- IndexedDB (cola sin conexion)
-function abrirDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NOMBRE, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(TIENDA_COLA)) {
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+función abrirDB() {
+  retorno nuevo Lo prometo.((solver, rechazar) => {
+    const req = indexadoDB.abierto(DB_NOMBRE, DB_VERSIÓN);
+    req.en caso de necesidad de actualización = () => {
+      const db = req.resultado;
+      si (!db.objetoStoreNames.contieno(TIENDA_COLA)) {
         db.createObjectStore(TIENDA_COLA, { keyPath: "id" });
       }
     };
