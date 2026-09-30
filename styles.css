@@ -183,12 +183,12 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 }
 .fab:active { background: #00d8b9; }
 
-/* ---------- registro ---------- */
-#pantalla-registro {
+/* ---------- pantallas a pantalla completa (registro / editar / resolver) ---------- */
+#pantalla-registro, #pantalla-editar, #pantalla-resolver {
   position: fixed; inset: 0; background: var(--fondo); z-index: 20;
   display: flex; flex-direction: column;
 }
-#pantalla-registro main { flex: 1; overflow-y: auto; padding-bottom: 30px; }
+#pantalla-registro main, #pantalla-editar main, #pantalla-resolver main { flex: 1; overflow-y: auto; padding-bottom: 30px; }
 
 .captura-zona {
   border: 2px dashed var(--borde); border-radius: var(--radio);
