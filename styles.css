@@ -1,7 +1,7 @@
 :root {
-  --azul: #0f4c81;
-  --azul-oscuro: #0a3760;
-  --verde: #1a8a4a;
+  --azul: #131629;       /* Abisal Blue, color de marca AUGEO */
+  --azul-oscuro: #05060c;
+  --cian: #00f5d4;       /* Cian Adrenaline, color de marca AUGEO */
   --rojo: #c0392b;
   --fondo: #f4f6f8;
   --tarjeta: #ffffff;
@@ -137,12 +137,12 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 .fab {
   position: fixed; right: 20px; bottom: calc(env(safe-area-inset-bottom) + 20px);
   width: 60px; height: 60px; border-radius: 50%;
-  background: var(--azul); color: #fff; border: none;
+  background: var(--cian); color: var(--azul); border: none;
   font-size: 30px; line-height: 60px; text-align: center;
-  box-shadow: 0 4px 14px rgba(15,76,129,.45);
+  box-shadow: 0 4px 14px rgba(0,245,212,.45);
   z-index: 6;
 }
-.fab:active { background: var(--azul-oscuro); }
+.fab:active { background: #00d8b9; }
 
 /* ---------- registro ---------- */
 #pantalla-registro {
