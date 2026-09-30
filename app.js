@@ -365,7 +365,7 @@ function abrirRegistro() {
   $("c-fecha").value = hoyIso();
   llenarFormularioConConfig();
   $("captura-zona").classList.remove("tiene-foto");
-  $("captura-zona").innerHTML = '<span class="icono">📷</span><div>Toca para tomar la foto de la factura o boleta</div><input type="file" accept="image/*,application/pdf" capture="environment" id="input-foto" class="oculto">';
+  $("captura-zona").innerHTML = '<span class="icono">📷</span><div>Toca para elegir una foto, PDF o tomar la foto ahora</div><input type="file" accept="image/*,application/pdf" id="input-foto" class="oculto">';
   $("input-foto").addEventListener("change", onFotoSeleccionada);
   $("estado-lectura").classList.add("oculto");
   $("pantalla-registro").classList.remove("oculto");
@@ -393,7 +393,7 @@ async function onFotoSeleccionada(e) {
     ? `<div class="pdf-preview">📄 ${escaparHtml(file.name)}</div>`
     : `<img src="${url}" alt="">`;
   const nuevoInput = document.createElement("input");
-  nuevoInput.type = "file"; nuevoInput.accept = "image/*,application/pdf"; nuevoInput.capture = "environment";
+  nuevoInput.type = "file"; nuevoInput.accept = "image/*,application/pdf";
   nuevoInput.id = "input-foto"; nuevoInput.className = "oculto";
   zona.appendChild(nuevoInput);
   nuevoInput.addEventListener("change", onFotoSeleccionada);
