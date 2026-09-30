@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compras AUGEO</title>
+<meta name="theme-color" content="#0f4c81">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<section id="pantalla-clave">
+  <img class="logo" src="icons/icon-192.png" alt="">
+  <h1>Compras AUGEO</h1>
+  <p>Ingresa la clave del sistema para entrar</p>
+  <form id="form-clave">
+    <input class="campo" type="password" id="input-clave" placeholder="Clave" autocomplete="off" required>
+    <div class="error-texto" id="error-clave"></div>
+    <button class="boton-primario" type="submit" id="boton-entrar">Entrar</button>
+  </form>
+</section>
+
+<div id="app" class="oculto">
+  <header class="app-bar">
+    <h1>Compras AUGEO</h1>
+    <button id="boton-salir" title="Cerrar sesion">⏻</button>
+  </header>
+
+  <main>
+    <div class="aviso-offline oculto" id="aviso-offline">📡 Sin conexion — lo que registres se guarda y se sube solo despues.</div>
+    <div class="aviso-cola oculto" id="aviso-cola"></div>
+
+    <div class="tarjeta" id="tarjeta-resumen">
+      <h2 id="resumen-mes-label">Este mes</h2>
+      <p class="resumen-total" id="resumen-total">—</p>
+      <div id="resumen-detalle"></div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Ultimas compras</h2>
+      <div id="lista-compras"><div class="vacio">Cargando…</div></div>
+    </div>
+  </main>
+
+  <button class="fab" id="boton-nueva" title="Nueva compra">+</button>
+</div>
+
+<section id="pantalla-registro" class="oculto">
+  <header class="app-bar">
+    <h1>Nueva compra</h1>
+    <button id="boton-cerrar-registro">✕</button>
+  </header>
+  <main>
+    <div class="captura-zona" id="captura-zona">
+      <span class="icono">📷</span>
+      <div>Toca para tomar la foto de la factura o boleta</div>
+      <input type="file" accept="image/*" capture="environment" id="input-foto" class="oculto">
+    </div>
+
+    <div class="estado-lectura oculto" id="estado-lectura">
+      <span class="spinner"></span> Leyendo factura…
+    </div>
+
+    <form id="form-compra">
+      <div class="fila-2">
+        <div class="campo-grupo">
+          <label for="c-fecha">Fecha</label>
+          <input class="campo" type="date" id="c-fecha" required>
+        </div>
+        <div class="campo-grupo">
+          <label for="c-moneda">Moneda</label>
+          <select class="campo" id="c-moneda" required></select>
+        </div>
+      </div>
+
+      <div class="campo-grupo">
+        <label for="c-proveedor">Proveedor</label>
+        <input class="campo" type="text" id="c-proveedor" placeholder="Nombre del proveedor" required>
+      </div>
+
+      <div class="campo-grupo">
+        <label for="c-monto">Monto</label>
+        <input class="campo" type="number" step="0.01" min="0.01" id="c-monto" placeholder="0.00" required>
+      </div>
+
+      <div class="fila-2">
+        <div class="campo-grupo">
+          <label for="c-categoria">Categoria</label>
+          <select class="campo" id="c-categoria" required></select>
+        </div>
+        <div class="campo-grupo">
+          <label for="c-metodo">Metodo de pago</label>
+          <select class="campo" id="c-metodo" required></select>
+        </div>
+      </div>
+
+      <div class="campo-grupo">
+        <label for="c-comprobante">N° de comprobante (opcional)</label>
+        <input class="campo" type="text" id="c-comprobante" placeholder="F001-00012345">
+      </div>
+
+      <div class="campo-grupo">
+        <label for="c-concepto">Concepto (opcional)</label>
+        <input class="campo" type="text" id="c-concepto" placeholder="¿Que se compro?">
+      </div>
+
+      <div class="campo-grupo">
+        <label for="c-nota">Nota (opcional)</label>
+        <input class="campo" type="text" id="c-nota" placeholder="">
+      </div>
+    </form>
+  </main>
+  <div class="acciones-registro">
+    <button class="boton-secundario" id="boton-cancelar-registro" type="button">Cancelar</button>
+    <button class="boton-primario" id="boton-guardar" type="button">Guardar</button>
+  </div>
+</section>
+
+<div id="toast" class="toast oculto"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

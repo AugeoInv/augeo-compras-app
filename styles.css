@@ -1,0 +1,184 @@
+:root {
+  --azul: #0f4c81;
+  --azul-oscuro: #0a3760;
+  --verde: #1a8a4a;
+  --rojo: #c0392b;
+  --fondo: #f4f6f8;
+  --tarjeta: #ffffff;
+  --texto: #1c2733;
+  --texto-suave: #64748b;
+  --borde: #e2e8f0;
+  --radio: 14px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.oculto { display: none !important; }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- pantalla de clave ---------- */
+#pantalla-clave {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+#pantalla-clave .logo {
+  width: 72px; height: 72px; border-radius: 20px; margin-bottom: 16px;
+}
+
+#pantalla-clave h1 { font-size: 20px; margin: 0 0 4px; }
+#pantalla-clave p { color: var(--texto-suave); font-size: 14px; margin: 0 0 24px; }
+
+#form-clave { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 12px; }
+
+.campo {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--borde);
+  font-size: 16px;
+  background: var(--tarjeta);
+}
+
+.boton-primario {
+  background: var(--azul);
+  color: #fff;
+  border: none;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.boton-primario:active { background: var(--azul-oscuro); }
+.boton-primario:disabled { opacity: .55; }
+
+.boton-secundario {
+  background: transparent;
+  color: var(--azul);
+  border: 1px solid var(--azul);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.error-texto { color: var(--rojo); font-size: 13px; min-height: 18px; }
+
+/* ---------- app principal ---------- */
+header.app-bar {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--azul);
+  color: #fff;
+  padding: calc(env(safe-area-inset-top) + 14px) 18px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+header.app-bar h1 { font-size: 17px; margin: 0; font-weight: 600; }
+header.app-bar button { background: none; border: none; color: #fff; font-size: 20px; padding: 4px 8px; }
+
+main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
+
+.aviso-offline {
+  background: #fff3cd; color: #7a5b00; padding: 10px 14px; border-radius: 10px;
+  font-size: 13px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.aviso-cola {
+  background: #e6f0ff; color: var(--azul-oscuro); padding: 10px 14px; border-radius: 10px;
+  font-size: 13px; margin-bottom: 14px;
+}
+
+.tarjeta {
+  background: var(--tarjeta);
+  border-radius: var(--radio);
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.tarjeta h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave); margin: 0 0 10px; }
+
+.resumen-total { font-size: 28px; font-weight: 700; margin: 0; }
+.resumen-fila { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-top: 1px solid var(--borde); }
+.resumen-fila:first-of-type { border-top: none; }
+
+.compra-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--borde); gap: 10px; }
+.compra-item:first-child { border-top: none; }
+.compra-info { min-width: 0; }
+.compra-proveedor { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.compra-meta { font-size: 12px; color: var(--texto-suave); }
+.compra-monto { font-weight: 700; font-size: 14px; white-space: nowrap; }
+.pill { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 20px; background: var(--borde); color: var(--texto-suave); margin-left: 6px; }
+.pill.pendiente { background: #fff3cd; color: #7a5b00; }
+.pill.cola { background: #e6f0ff; color: var(--azul-oscuro); }
+
+.vacio { color: var(--texto-suave); font-size: 14px; text-align: center; padding: 20px 0; }
+
+.fab {
+  position: fixed; right: 20px; bottom: calc(env(safe-area-inset-bottom) + 20px);
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--azul); color: #fff; border: none;
+  font-size: 30px; line-height: 60px; text-align: center;
+  box-shadow: 0 4px 14px rgba(15,76,129,.45);
+  z-index: 6;
+}
+.fab:active { background: var(--azul-oscuro); }
+
+/* ---------- registro ---------- */
+#pantalla-registro {
+  position: fixed; inset: 0; background: var(--fondo); z-index: 20;
+  display: flex; flex-direction: column;
+}
+#pantalla-registro main { flex: 1; overflow-y: auto; padding-bottom: 30px; }
+
+.captura-zona {
+  border: 2px dashed var(--borde); border-radius: var(--radio);
+  padding: 30px 16px; text-align: center; color: var(--texto-suave);
+  margin-bottom: 14px; background: var(--tarjeta);
+}
+.captura-zona.tiene-foto { padding: 0; border: none; overflow: hidden; }
+.captura-zona img { width: 100%; display: block; max-height: 300px; object-fit: contain; background: #000; }
+.captura-zona .icono { font-size: 40px; display: block; margin-bottom: 8px; }
+
+.estado-lectura { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--azul); margin-bottom: 14px; }
+.spinner {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--borde); border-top-color: var(--azul);
+  animation: girar .7s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.campo-grupo { margin-bottom: 12px; }
+.campo-grupo label { display: block; font-size: 12px; color: var(--texto-suave); margin-bottom: 4px; font-weight: 600; }
+.fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+select.campo { appearance: none; background-color: var(--tarjeta); }
+
+.acciones-registro { display: flex; gap: 10px; padding: 14px 16px calc(env(safe-area-inset-bottom) + 14px); background: var(--tarjeta); border-top: 1px solid var(--borde); }
+.acciones-registro button { flex: 1; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: var(--texto); color: #fff; padding: 12px 18px; border-radius: 10px;
+  font-size: 14px; z-index: 30; max-width: 90vw; text-align: center;
+}
