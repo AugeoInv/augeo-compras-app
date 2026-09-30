@@ -96,6 +96,7 @@ header.app-bar {
 }
 header.app-bar h1 { font-size: 17px; margin: 0; font-weight: 600; }
 header.app-bar button { background: none; border: none; color: #fff; font-size: 20px; padding: 4px 8px; }
+.app-bar-acciones { display: flex; align-items: center; gap: 4px; }
 
 main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 
@@ -156,6 +157,9 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 #editar-estado-zona h2 { margin-bottom: 6px; }
 #editar-estado-texto { font-size: 13px; color: var(--texto-suave); margin: 0 0 10px; }
 
+#importar-preview { margin-top: 10px; max-height: 340px; overflow-y: auto; background: var(--tarjeta); border-radius: var(--radio); }
+.importar-subtitulo { color: var(--texto-suave); font-size: 12px; margin-top: 10px; }
+
 .resumen-total { font-size: 28px; font-weight: 700; margin: 0; }
 .resumen-fila { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-top: 1px solid var(--borde); }
 .resumen-fila:first-of-type { border-top: none; }
@@ -184,11 +188,13 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 .fab:active { background: #00d8b9; }
 
 /* ---------- pantallas a pantalla completa (registro / editar / resolver) ---------- */
-#pantalla-registro, #pantalla-editar, #pantalla-resolver {
+#pantalla-registro, #pantalla-editar, #pantalla-resolver, #pantalla-importar {
   position: fixed; inset: 0; background: var(--fondo); z-index: 20;
   display: flex; flex-direction: column;
 }
-#pantalla-registro main, #pantalla-editar main, #pantalla-resolver main { flex: 1; overflow-y: auto; padding-bottom: 30px; }
+#pantalla-registro main, #pantalla-editar main, #pantalla-resolver main, #pantalla-importar main {
+  flex: 1; overflow-y: auto; padding-bottom: 30px;
+}
 
 .captura-zona {
   border: 2px dashed var(--borde); border-radius: var(--radio);

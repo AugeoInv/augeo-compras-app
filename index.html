@@ -27,7 +27,10 @@
 <div id="app" class="oculto">
   <header class="app-bar">
     <h1>Compras AUGEO</h1>
-    <button id="boton-salir" title="Cerrar sesion">⏻</button>
+    <div class="app-bar-acciones">
+      <button id="boton-importar-eecc" title="Importar estado de cuenta">🏦</button>
+      <button id="boton-salir" title="Cerrar sesion">⏻</button>
+    </div>
   </header>
 
   <main>
@@ -223,8 +226,42 @@
   </main>
 </section>
 
+<section id="pantalla-importar" class="oculto">
+  <header class="app-bar">
+    <h1>Importar estado de cuenta</h1>
+    <button id="boton-cerrar-importar">✕</button>
+  </header>
+  <main>
+    <div class="fila-2">
+      <div class="campo-grupo">
+        <label for="i-cuenta">Cuenta</label>
+        <select class="campo" id="i-cuenta" required></select>
+      </div>
+      <div class="campo-grupo">
+        <label for="i-moneda">Moneda del archivo</label>
+        <select class="campo" id="i-moneda" required></select>
+      </div>
+    </div>
+
+    <div class="campo-grupo">
+      <label for="i-archivo">Archivo: .xlsx de "banca por internet" (BCP) o .pdf del estado de cuenta (Interbank)</label>
+      <input class="campo" type="file" id="i-archivo" accept=".xlsx,.pdf">
+    </div>
+
+    <div id="importar-estado" class="compra-meta"></div>
+    <div id="importar-preview"></div>
+    <div id="importar-resultado" class="tarjeta oculto"></div>
+  </main>
+  <div class="acciones-registro">
+    <button class="boton-secundario" id="boton-cancelar-importar" type="button">Cancelar</button>
+    <button class="boton-primario" id="boton-confirmar-importar" type="button" disabled>Importar</button>
+  </div>
+</section>
+
 <div id="toast" class="toast oculto"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

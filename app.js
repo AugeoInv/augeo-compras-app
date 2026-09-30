@@ -4,6 +4,9 @@ const CONFIG_KEY = "compras_config_cache";
 const DB_NOMBRE = "compras-offline";
 const DB_VERSION = 1;
 const TIENDA_COLA = "cola";
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
 
 // ---------------------------------------------------------------------------------------------- utilidades
 const $ = (id) => document.getElementById(id);
@@ -636,6 +639,185 @@ $("boton-resolver-ignorar").addEventListener("click", async () => {
 });
 
 $("boton-cerrar-resolver").addEventListener("click", cerrarResolver);
+
+// ---------------------------------------------------------------------------------------------- importar estado de cuenta
+const MESES_ES_IDX = {
+  enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7,
+  agosto: 8, septiembre: 9, setiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
+};
+
+function numeroConComas(s) {
+  return parseFloat(String(s).replace(/,/g, ""));
+}
+
+/** Junta los "items" de texto de pdf.js en lineas (por coordenada Y) y los ordena por X, como una lectura normal. */
+function agruparLineasPDF(items) {
+  const filas = [];
+  const TOL = 2;
+  for (const it of items) {
+    const y = it.transform[5];
+    let fila = filas.find((f) => Math.abs(f.y - y) <= TOL);
+    if (!fila) { fila = { y, partes: [] }; filas.push(fila); }
+    fila.partes.push({ x: it.transform[4], texto: it.str });
+  }
+  filas.sort((a, b) => b.y - a.y);
+  return filas.map((f) => {
+    f.partes.sort((a, b) => a.x - b.x);
+    return f.partes.map((p) => p.texto).join(" ").replace(/\s+/g, " ").trim();
+  });
+}
+
+/** Estado de cuenta negocios de Interbank (PDF, sin clave). Misma logica que importador.py, portada a JS. */
+async function leerInterbankPDF(file, moneda) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let lineas = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    lineas = lineas.concat(agruparLineasPDF(content.items));
+  }
+  const texto = lineas.join("\n");
+  const mMes = texto.match(/Mes:\s*(\S+)\s+(\d{4})/i);
+  if (!mMes) throw new Error("No encontre \"Mes: <nombre> <año>\" en el PDF — ¿es un estado de cuenta de Interbank?");
+  const mesNum = MESES_ES_IDX[mMes[1].toLowerCase()];
+  const anio = mMes[2];
+  if (!mesNum) throw new Error("Mes \"" + mMes[1] + "\" no reconocido");
+
+  const FILA = /^(\d{2})\/(\d{2})\s+\d{2}\/\d{2}\s+(.+?)\s+(-?[\d,]+\.\d{2})\s+[\d,]+\.\d{2}$/;
+  const filas = [];
+  for (const linea of lineas) {
+    const m = FILA.exec(linea.trim());
+    if (!m) continue;
+    const [, dd, mm, detalle, montoStr] = m;
+    filas.push({ fecha: `${anio}-${mm}-${dd}`, descripcion: detalle.trim(), moneda, monto: numeroConComas(montoStr), operacion: "" });
+  }
+  return filas;
+}
+
+/** Excel de "banca por internet" del BCP: columnas Fecha, Descripcion, Moneda, Monto, Numero de Operacion. */
+async function leerBcpExcel(file, moneda) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const crudas = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "" });
+  if (!crudas.length) return [];
+  const encabezado = crudas[0].map((c) => String(c || "").trim().toLowerCase());
+  const iFecha = encabezado.indexOf("fecha");
+  const iDesc = encabezado.indexOf("descripcion");
+  const iMonto = encabezado.indexOf("monto");
+  const iOp = encabezado.indexOf("numero de operacion");
+  if (iFecha < 0 || iMonto < 0) throw new Error("El Excel no tiene las columnas esperadas (Fecha, Descripcion, Monto, ...)");
+
+  const filas = [];
+  for (let r = 1; r < crudas.length; r++) {
+    const fila = crudas[r];
+    const fecha = fila[iFecha];
+    const monto = fila[iMonto];
+    if (!fecha || monto === "" || monto === undefined) continue;
+    const partes = String(fecha).split("/");
+    if (partes.length !== 3) continue;
+    const [dd, mm, aaaa] = partes;
+    filas.push({
+      fecha: `${aaaa}-${mm}-${dd}`,
+      descripcion: String(fila[iDesc] || "").trim(),
+      moneda,
+      monto: numeroConComas(monto),
+      operacion: String(fila[iOp] || ""),
+    });
+  }
+  return filas;
+}
+
+let filasImportar = [];
+
+function abrirImportar() {
+  filasImportar = [];
+  $("i-archivo").value = "";
+  $("importar-estado").textContent = "";
+  $("importar-preview").innerHTML = "";
+  $("importar-resultado").classList.add("oculto");
+  $("boton-confirmar-importar").disabled = true;
+  $("boton-confirmar-importar").classList.remove("oculto");
+  $("boton-cancelar-importar").textContent = "Cancelar";
+  if (configCache) {
+    llenarSelect($("i-cuenta"), (configCache.cuentas || []).map((c) => ({ valor: c, texto: c })));
+    llenarSelect($("i-moneda"), configCache.monedas.map((m) => ({ valor: m, texto: m })), "PEN");
+  }
+  $("pantalla-importar").classList.remove("oculto");
+}
+
+function cerrarImportar() {
+  $("pantalla-importar").classList.add("oculto");
+}
+
+$("boton-importar-eecc").addEventListener("click", abrirImportar);
+$("boton-cerrar-importar").addEventListener("click", cerrarImportar);
+$("boton-cancelar-importar").addEventListener("click", cerrarImportar);
+
+$("i-archivo").addEventListener("change", async () => {
+  const file = $("i-archivo").files[0];
+  const estado = $("importar-estado");
+  const prev = $("importar-preview");
+  filasImportar = [];
+  prev.innerHTML = "";
+  $("boton-confirmar-importar").disabled = true;
+  if (!file) { estado.textContent = ""; return; }
+
+  estado.textContent = "Leyendo archivo…";
+  const moneda = $("i-moneda").value;
+  try {
+    if (/\.xlsx$/i.test(file.name)) {
+      filasImportar = await leerBcpExcel(file, moneda);
+    } else if (/\.pdf$/i.test(file.name)) {
+      filasImportar = await leerInterbankPDF(file, moneda);
+    } else {
+      throw new Error("Solo se aceptan archivos .xlsx (BCP) o .pdf (Interbank)");
+    }
+    if (!filasImportar.length) throw new Error("No se encontraron movimientos en el archivo");
+
+    estado.textContent = `${filasImportar.length} movimientos encontrados — revisa antes de importar:`;
+    prev.innerHTML = filasImportar.map((f) => `
+      <div class="resultado-item">
+        <div><div>${escaparHtml(f.descripcion)}</div><div class="compra-meta">${f.fecha}${f.operacion ? " · Op. " + escaparHtml(f.operacion) : ""}</div></div>
+        <div class="r-monto">${formatoMoneda(f.monto, moneda)}</div>
+      </div>
+    `).join("");
+    $("boton-confirmar-importar").disabled = false;
+  } catch (e) {
+    estado.textContent = "⚠ " + e.message;
+  }
+});
+
+$("boton-confirmar-importar").addEventListener("click", async () => {
+  if (!filasImportar.length) return;
+  const boton = $("boton-confirmar-importar");
+  boton.disabled = true; boton.textContent = "Importando…";
+  try {
+    const r = await llamar("importar_movimientos", { cuenta: $("i-cuenta").value, filas: filasImportar });
+    const res = $("importar-resultado");
+    res.classList.remove("oculto");
+    res.innerHTML = `
+      <h2>Resultado</h2>
+      <div class="resumen-fila"><span>Nuevos</span><span>${r.nuevos}</span></div>
+      <div class="resumen-fila"><span>Ya estaban (repetidos)</span><span>${r.repetidos}</span></div>
+      <div class="resumen-fila"><span>Vinculados solos</span><span>${r.vinculados_solos}</span></div>
+      <div class="resumen-fila"><span>Por revisar</span><span>${r.por_revisar}</span></div>
+      ${r.ejemplos_por_revisar.length ? "<div class=\"importar-subtitulo\">Ejemplos sin cruzar:</div>" + r.ejemplos_por_revisar.map((e) => `<div class="conciliacion-item">${escaparHtml(e)}</div>`).join("") : ""}
+    `;
+    $("importar-preview").innerHTML = "";
+    $("importar-estado").textContent = "";
+    $("i-archivo").value = "";
+    filasImportar = [];
+    boton.classList.add("oculto");
+    $("boton-cancelar-importar").textContent = "Listo";
+    cargarResumenYLista();
+  } catch (e) {
+    mostrarToast("Error: " + e.message);
+  } finally {
+    boton.disabled = false; boton.textContent = "Importar";
+  }
+});
 
 // ---------------------------------------------------------------------------------------------- arranque
 function actualizarAvisoOffline() {
