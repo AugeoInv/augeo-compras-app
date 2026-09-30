@@ -579,62 +579,173 @@ function etiquetaPeriodo(desde, hasta) {
   return `Hasta ${nombreMes(hasta)}`;
 }
 
-function construirLibroDevolucion(compras, periodoLabel) {
-  const filas = [
-    ["AUGEO INVESTMENTS E.I.R.L."],
-    ["SOLICITUD DE DEVOLUCIÓN - GASTOS PAGADOS CON TARJETA PERSONAL"],
-    ["PERIODO", "", periodoLabel, "", "RESPONSABLE:", "FERNANDO FLORES"],
-    [],
-    ["FECHA", "N° / ID", "PROVEEDOR", "CONCEPTO", "USD", "S/.", "MONTO USD"],
-  ];
+const NOTA_TC_DEVOLUCION = "Nota: cada fila se convierte a USD con el tipo de cambio del mes de su fecha (o el ultimo disponible antes de ese mes). Verifica el TC con Contabilidad antes de enviar.";
+const AZUL_ARGB = "FF131629";
+const CIAN_ARGB = "FF00F5D4";
+const BORDE_FINO = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+
+/** Calcula filas + totales una sola vez; Excel y PDF arman su propio documento a partir de esto. */
+function calcularFilasDevolucion(compras) {
   let totalUsd = 0, subPen = 0, subUsd = 0, subEur = 0;
-  compras.forEach((c) => {
+  const filas = compras.map((c) => {
     const usd = Math.round(montoEnUsd(c) * 100) / 100;
     totalUsd += usd;
     if (c.moneda === "PEN") subPen += c.monto;
     else if (c.moneda === "USD") subUsd += c.monto;
     else if (c.moneda === "EUR") subEur += c.monto;
-    filas.push([
-      aFechaPe(c.fecha), c.comprobante || "", c.proveedor, c.concepto || "",
-      c.moneda === "USD" || c.moneda === "EUR" ? c.monto : "",
-      c.moneda === "PEN" ? c.monto : "",
-      usd,
-    ]);
+    return {
+      fecha: aFechaPe(c.fecha), id: c.comprobante || "", proveedor: c.proveedor, concepto: c.concepto || "",
+      usd: c.moneda === "USD" || c.moneda === "EUR" ? c.monto : null,
+      pen: c.moneda === "PEN" ? c.monto : null,
+      montoUsd: usd,
+    };
   });
-  const filaTotal = filas.length + 2;   // fila 1-based del TOTAL: +1 por la fila en blanco, +1 por si misma
-  filas.push([]);
-  filas.push(["Responsable: FERNANDO FLORES", "", "", "TOTAL A REEMBOLSAR (USD)", "", "", Math.round(totalUsd * 100) / 100]);
-  filas.push(["", "", "Subtotales por moneda original (referencia):", "", subUsd || "", subPen || "", subEur || ""]);
-  filas.push(["Nota: cada fila se convierte a USD con el tipo de cambio del mes de su fecha (o el ultimo disponible antes de ese mes). Verifica el TC con Contabilidad antes de enviar."]);
+  return { filas, totalUsd: Math.round(totalUsd * 100) / 100, subPen, subUsd, subEur };
+}
 
-  const ws = XLSX.utils.aoa_to_sheet(filas);
-  ws["!cols"] = [{ wch: 12 }, { wch: 16 }, { wch: 26 }, { wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 12 }];
-  // Fusiona las filas de titulo/periodo para que se vean como encabezado en vez de una celda sola en A.
-  ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } },
-    { s: { r: 2, c: 2 }, e: { r: 2, c: 3 } },
-  ];
-  // Formato de moneda en las columnas de montos (USD, S/., MONTO USD) para todas las filas de datos + el total.
-  for (let fila = 6; fila <= filaTotal; fila++) {
-    ["E", "F", "G"].forEach((col) => {
-      const celda = ws[col + fila];
-      if (celda && typeof celda.v === "number") celda.z = "#,##0.00";
-    });
-  }
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Solicitud Devolucion");
+async function construirExcelDevolucion(compras, periodoLabel) {
+  const { filas, totalUsd, subPen, subUsd, subEur } = calcularFilasDevolucion(compras);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Solicitud Devolucion");
+  ws.columns = [{ width: 12 }, { width: 16 }, { width: 26 }, { width: 30 }, { width: 10 }, { width: 10 }, { width: 14 }];
+
+  ws.mergeCells("A1:G1");
+  ws.getCell("A1").value = "AUGEO INVESTMENTS E.I.R.L.";
+  ws.getCell("A1").font = { bold: true, size: 14 };
+
+  ws.mergeCells("A2:G2");
+  ws.getCell("A2").value = "SOLICITUD DE DEVOLUCIÓN - GASTOS PAGADOS CON TARJETA PERSONAL";
+  ws.getCell("A2").font = { bold: true, size: 12 };
+
+  ws.getCell("A3").value = "PERIODO";
+  ws.getCell("A3").font = { bold: true };
+  ws.mergeCells("B3:C3");
+  ws.getCell("B3").value = periodoLabel;
+  ws.getCell("E3").value = "RESPONSABLE:";
+  ws.getCell("E3").font = { bold: true };
+  ws.getCell("F3").value = "FERNANDO FLORES";
+
+  const filaHeader = 5;
+  ws.getRow(filaHeader).values = ["FECHA", "N° / ID", "PROVEEDOR", "CONCEPTO", "USD", "S/.", "MONTO USD"];
+  ws.getRow(filaHeader).eachCell((celda) => {
+    celda.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    celda.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AZUL_ARGB } };
+    celda.border = BORDE_FINO;
+    celda.alignment = { horizontal: "center", vertical: "middle" };
+  });
+
+  let fila = filaHeader + 1;
+  filas.forEach((f) => {
+    const r = ws.getRow(fila);
+    r.values = [f.fecha, f.id, f.proveedor, f.concepto, f.usd, f.pen, f.montoUsd];
+    ["E", "F", "G"].forEach((col) => { r.getCell(col).numFmt = "#,##0.00"; });
+    r.eachCell({ includeEmpty: true }, (celda) => { celda.border = BORDE_FINO; });
+    fila++;
+  });
+
+  fila++; // fila en blanco
+  const filaTotal = fila;
+  ws.mergeCells(`A${filaTotal}:C${filaTotal}`);
+  ws.getCell(`A${filaTotal}`).value = "Responsable: FERNANDO FLORES";
+  ws.mergeCells(`D${filaTotal}:F${filaTotal}`);
+  ws.getCell(`D${filaTotal}`).value = "TOTAL A REEMBOLSAR (USD)";
+  ws.getCell(`G${filaTotal}`).value = totalUsd;
+  ws.getCell(`G${filaTotal}`).numFmt = "#,##0.00";
+  ws.getRow(filaTotal).eachCell({ includeEmpty: true }, (celda) => {
+    celda.font = { bold: true };
+    celda.fill = { type: "pattern", pattern: "solid", fgColor: { argb: CIAN_ARGB } };
+    celda.border = BORDE_FINO;
+  });
+
+  fila++;
+  ws.getCell(`C${fila}`).value = "Subtotales por moneda original (referencia):";
+  ws.getCell(`E${fila}`).value = subUsd || null;
+  ws.getCell(`F${fila}`).value = subPen || null;
+  ws.getCell(`G${fila}`).value = subEur || null;
+  ["E", "F", "G"].forEach((col) => { ws.getCell(col + fila).numFmt = "#,##0.00"; });
+
+  fila += 2;
+  ws.mergeCells(`A${fila}:G${fila}`);
+  ws.getCell(`A${fila}`).value = NOTA_TC_DEVOLUCION;
+  ws.getCell(`A${fila}`).font = { italic: true, size: 9 };
+  ws.getCell(`A${fila}`).alignment = { wrapText: true };
+
   return wb;
 }
 
-function exportarSolicitudDevolucion() {
+async function descargarExcel(wb, nombre) {
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nombre; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+function construirPdfDevolucion(compras, periodoLabel) {
+  const { filas, totalUsd, subUsd, subPen, subEur } = calcularFilasDevolucion(compras);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape", unit: "pt" });
+
+  doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+  doc.text("AUGEO INVESTMENTS E.I.R.L.", 40, 40);
+  doc.setFontSize(11);
+  doc.text("SOLICITUD DE DEVOLUCIÓN - GASTOS PAGADOS CON TARJETA PERSONAL", 40, 58);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.text(`Periodo: ${periodoLabel}    Responsable: FERNANDO FLORES`, 40, 76);
+
+  doc.autoTable({
+    startY: 92,
+    head: [["FECHA", "N° / ID", "PROVEEDOR", "CONCEPTO", "USD", "S/.", "MONTO USD"]],
+    body: filas.map((f) => [f.fecha, f.id, f.proveedor, f.concepto,
+      f.usd != null ? f.usd.toFixed(2) : "", f.pen != null ? f.pen.toFixed(2) : "", f.montoUsd.toFixed(2)]),
+    foot: [["", "", "", "TOTAL A REEMBOLSAR (USD)", "", "", totalUsd.toFixed(2)]],
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [19, 22, 41], textColor: 255, fontStyle: "bold" },
+    footStyles: { fillColor: [0, 245, 212], textColor: [19, 22, 41], fontStyle: "bold" },
+    columnStyles: { 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" } },
+  });
+
+  const y = doc.lastAutoTable.finalY + 20;
+  doc.setFontSize(9);
+  doc.text(`Subtotales por moneda original: USD ${subUsd.toFixed(2)}   S/. ${subPen.toFixed(2)}${subEur ? "   EUR " + subEur.toFixed(2) : ""}`, 40, y);
+  doc.setFont("helvetica", "italic");
+  doc.text(NOTA_TC_DEVOLUCION, 40, y + 16, { maxWidth: 760 });
+
+  return doc;
+}
+
+function arrayBufferABase64(buf) {
+  let binario = "";
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.byteLength; i++) binario += String.fromCharCode(bytes[i]);
+  return btoa(binario);
+}
+
+function comprasSeleccionadasDevolver() {
   const ids = Array.from($("devolver-lista").querySelectorAll("input[type=checkbox]:checked")).map((el) => el.dataset.id);
-  const compras = pendientesDevolver.filter((c) => ids.includes(c.id));
+  return pendientesDevolver.filter((c) => ids.includes(c.id));
+}
+
+async function exportarSolicitudDevolucion() {
+  const compras = comprasSeleccionadasDevolver();
   if (!compras.length) { mostrarToast("Selecciona al menos una compra"); return; }
   const periodo = etiquetaPeriodo($("devolver-desde").value, $("devolver-hasta").value);
-  const wb = construirLibroDevolucion(compras, periodo);
-  XLSX.writeFile(wb, `Solicitud de Devolucion - Fernando Flores - ${hoyIso()}.xlsx`);
+  const boton = $("boton-exportar-devolucion");
+  const textoOriginal = boton.textContent;
+  boton.disabled = true; boton.textContent = "Generando…";
+  try {
+    if ($("devolver-formato").value === "xlsx") {
+      const wb = await construirExcelDevolucion(compras, periodo);
+      await descargarExcel(wb, `Solicitud de Devolucion - Fernando Flores - ${hoyIso()}.xlsx`);
+    } else {
+      construirPdfDevolucion(compras, periodo).save(`Solicitud de Devolucion - Fernando Flores - ${hoyIso()}.pdf`);
+    }
+  } catch (e) {
+    mostrarToast("Error: " + e.message);
+  } finally {
+    boton.disabled = false; boton.textContent = textoOriginal;
+  }
 }
 
 $("boton-exportar-devolucion").addEventListener("click", exportarSolicitudDevolucion);
@@ -701,16 +812,24 @@ $("boton-abrir-devolver").addEventListener("click", abrirDevolver);
 $("boton-cerrar-devolver").addEventListener("click", cerrarDevolver);
 
 $("boton-confirmar-devolver").addEventListener("click", async () => {
-  const ids = Array.from($("devolver-lista").querySelectorAll("input[type=checkbox]:checked")).map((el) => el.dataset.id);
-  if (!ids.length) { mostrarToast("Selecciona al menos una compra"); return; }
+  const compras = comprasSeleccionadasDevolver();
+  if (!compras.length) { mostrarToast("Selecciona al menos una compra"); return; }
   const boton = $("boton-confirmar-devolver");
   boton.disabled = true; boton.textContent = "Guardando…";
   try {
-    const datos = { ids, solicitud: $("devolver-solicitud").value.trim() };
+    // El PDF de la solicitud que se marca como pagada queda archivado en Drive como sustento, ademas del
+    // comprobante de la transferencia si lo adjuntas — asi queda el "que se pidio" junto al "que se pago".
+    const periodo = etiquetaPeriodo($("devolver-desde").value, $("devolver-hasta").value);
+    const pdfDoc = construirPdfDevolucion(compras, periodo);
+    const datos = {
+      ids: compras.map((c) => c.id),
+      solicitud: $("devolver-solicitud").value.trim(),
+      solicitud_pdf: { mime: "application/pdf", base64: arrayBufferABase64(pdfDoc.output("arraybuffer")) },
+    };
     const file = $("devolver-comprobante").files[0];
     if (file) datos.archivo = { mime: file.type || "application/pdf", base64: await fileABase64(file) };
     await llamar("marcar_devueltas", datos);
-    mostrarToast(ids.length === 1 ? "1 compra marcada como pagada" : `${ids.length} compras marcadas como pagadas`);
+    mostrarToast(compras.length === 1 ? "1 compra marcada como pagada" : `${compras.length} compras marcadas como pagadas`);
     cerrarDevolver();
     cargarResumenYLista();
   } catch (e) {
