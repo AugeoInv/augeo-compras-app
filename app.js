@@ -199,6 +199,13 @@ async function obtenerConfig() {
   }
 }
 
+/** Si el celular abre "Nueva compra"/editar/importar antes de que termine de llegar la configuracion (red
+ *  lenta), los combos de categoria/metodo/cuenta salian vacios ("No hay opciones"). Se espera aqui una vez. */
+async function asegurarConfig() {
+  if (configCache) return;
+  try { await obtenerConfig(); } catch (e) { /* sin config ni cache: los combos quedan vacios, no hay mas que hacer */ }
+}
+
 function llenarSelect(select, opciones, seleccionar) {
   select.innerHTML = "";
   opciones.forEach(({ valor, texto }) => {
@@ -359,16 +366,17 @@ function escaparHtml(s) {
 // ---------------------------------------------------------------------------------------------- pantalla de registro
 let fotoActual = null; // { mime, base64 }
 
-function abrirRegistro() {
+async function abrirRegistro() {
   fotoActual = null;
   $("form-compra").reset();
   $("c-fecha").value = hoyIso();
-  llenarFormularioConConfig();
   $("captura-zona").classList.remove("tiene-foto");
   $("captura-zona").innerHTML = '<span class="icono">📷</span><div>Toca para elegir una foto, PDF o tomar la foto ahora</div><input type="file" accept="image/*,application/pdf" id="input-foto" class="oculto">';
   $("input-foto").addEventListener("change", onFotoSeleccionada);
   $("estado-lectura").classList.add("oculto");
   $("pantalla-registro").classList.remove("oculto");
+  await asegurarConfig();
+  llenarFormularioConConfig();
 }
 
 function cerrarRegistro() {
@@ -463,7 +471,7 @@ $("boton-guardar").addEventListener("click", async () => {
 // ---------------------------------------------------------------------------------------------- pantalla de editar
 let compraEnEdicion = null;
 
-function abrirEditar(compra) {
+async function abrirEditar(compra) {
   compraEnEdicion = compra;
   $("e-fecha").value = compra.fecha;
   $("e-proveedor").value = compra.proveedor;
@@ -471,7 +479,9 @@ function abrirEditar(compra) {
   $("e-comprobante").value = compra.comprobante || "";
   $("e-concepto").value = compra.concepto || "";
   $("e-nota").value = compra.nota || "";
+  $("pantalla-editar").classList.remove("oculto");
 
+  await asegurarConfig();
   const claveMetodo = configCache ? Object.entries(configCache.metodos).find(([, v]) => v === compra.metodo) : null;
   llenarFormularioConConfig("e", compra.moneda, claveMetodo ? claveMetodo[0] : "empresa");
   $("e-categoria").value = compra.categoria;
@@ -485,8 +495,6 @@ function abrirEditar(compra) {
   } else {
     zona.classList.add("oculto");
   }
-
-  $("pantalla-editar").classList.remove("oculto");
 }
 
 function cerrarEditar() {
@@ -561,10 +569,13 @@ function tcParaMes(mes) {
   return { pen: 3.5, eur: 1.08 };
 }
 
-function montoEnUsd(c) {
+/** tcFijoPen: si Contabilidad ya dio un TC de cierre, se usa ese para TODAS las filas en vez del TC de cada mes
+ *  (asi como el "TC:" editable de la plantilla original). El de EUR no tiene ese caso de uso, sigue por mes. */
+function montoEnUsd(c, tcFijoPen) {
   const tc = tcParaMes(c.fecha.slice(0, 7));
+  const penPorUsd = tcFijoPen > 0 ? tcFijoPen : tc.pen;
   if (c.moneda === "USD") return c.monto;
-  if (c.moneda === "PEN") return c.monto / tc.pen;
+  if (c.moneda === "PEN") return c.monto / penPorUsd;
   if (c.moneda === "EUR") return c.monto * tc.eur;
   return c.monto;
 }
@@ -579,16 +590,23 @@ function etiquetaPeriodo(desde, hasta) {
   return `Hasta ${nombreMes(hasta)}`;
 }
 
-const NOTA_TC_DEVOLUCION = "Nota: cada fila se convierte a USD con el tipo de cambio del mes de su fecha (o el ultimo disponible antes de ese mes). Verifica el TC con Contabilidad antes de enviar.";
+const NOTA_TC_DEVOLUCION = "Nota: el monto en USD de cada fila usa el TC indicado arriba. Verifica el TC con Contabilidad antes de enviar.";
 const AZUL_ARGB = "FF131629";
 const CIAN_ARGB = "FF00F5D4";
+const AMARILLO_ARGB = "FFFFF2AE";
 const BORDE_FINO = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
 
+function etiquetaTc(tcFijoPen) {
+  return tcFijoPen > 0
+    ? `TC S/. por USD usado: ${tcFijoPen.toFixed(3)} (fijo, indicado por Contabilidad)`
+    : "TC S/. por USD usado: el de cada mes (o el ultimo disponible antes de ese mes)";
+}
+
 /** Calcula filas + totales una sola vez; Excel y PDF arman su propio documento a partir de esto. */
-function calcularFilasDevolucion(compras) {
+function calcularFilasDevolucion(compras, tcFijoPen) {
   let totalUsd = 0, subPen = 0, subUsd = 0, subEur = 0;
   const filas = compras.map((c) => {
-    const usd = Math.round(montoEnUsd(c) * 100) / 100;
+    const usd = Math.round(montoEnUsd(c, tcFijoPen) * 100) / 100;
     totalUsd += usd;
     if (c.moneda === "PEN") subPen += c.monto;
     else if (c.moneda === "USD") subUsd += c.monto;
@@ -603,8 +621,8 @@ function calcularFilasDevolucion(compras) {
   return { filas, totalUsd: Math.round(totalUsd * 100) / 100, subPen, subUsd, subEur };
 }
 
-async function construirExcelDevolucion(compras, periodoLabel) {
-  const { filas, totalUsd, subPen, subUsd, subEur } = calcularFilasDevolucion(compras);
+async function construirExcelDevolucion(compras, periodoLabel, tcFijoPen) {
+  const { filas, totalUsd, subPen, subUsd, subEur } = calcularFilasDevolucion(compras, tcFijoPen);
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Solicitud Devolucion");
   ws.columns = [{ width: 12 }, { width: 16 }, { width: 26 }, { width: 30 }, { width: 10 }, { width: 10 }, { width: 14 }];
@@ -625,7 +643,12 @@ async function construirExcelDevolucion(compras, periodoLabel) {
   ws.getCell("E3").font = { bold: true };
   ws.getCell("F3").value = "FERNANDO FLORES";
 
-  const filaHeader = 5;
+  ws.mergeCells("A4:F4");
+  ws.getCell("A4").value = etiquetaTc(tcFijoPen);
+  ws.getCell("A4").font = { bold: !!tcFijoPen };
+  if (tcFijoPen > 0) ws.getCell("A4").fill = { type: "pattern", pattern: "solid", fgColor: { argb: AMARILLO_ARGB } };
+
+  const filaHeader = 6;
   ws.getRow(filaHeader).values = ["FECHA", "N° / ID", "PROVEEDOR", "CONCEPTO", "USD", "S/.", "MONTO USD"];
   ws.getRow(filaHeader).eachCell((celda) => {
     celda.font = { bold: true, color: { argb: "FFFFFFFF" } };
@@ -682,8 +705,8 @@ async function descargarExcel(wb, nombre) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-function construirPdfDevolucion(compras, periodoLabel) {
-  const { filas, totalUsd, subUsd, subPen, subEur } = calcularFilasDevolucion(compras);
+function construirPdfDevolucion(compras, periodoLabel, tcFijoPen) {
+  const { filas, totalUsd, subUsd, subPen, subEur } = calcularFilasDevolucion(compras, tcFijoPen);
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "landscape", unit: "pt" });
 
@@ -693,9 +716,10 @@ function construirPdfDevolucion(compras, periodoLabel) {
   doc.text("SOLICITUD DE DEVOLUCIÓN - GASTOS PAGADOS CON TARJETA PERSONAL", 40, 58);
   doc.setFont("helvetica", "normal"); doc.setFontSize(10);
   doc.text(`Periodo: ${periodoLabel}    Responsable: FERNANDO FLORES`, 40, 76);
+  doc.text(etiquetaTc(tcFijoPen), 40, 92);
 
   doc.autoTable({
-    startY: 92,
+    startY: 106,
     head: [["FECHA", "N° / ID", "PROVEEDOR", "CONCEPTO", "USD", "S/.", "MONTO USD"]],
     body: filas.map((f) => [f.fecha, f.id, f.proveedor, f.concepto,
       f.usd != null ? f.usd.toFixed(2) : "", f.pen != null ? f.pen.toFixed(2) : "", f.montoUsd.toFixed(2)]),
@@ -731,15 +755,16 @@ async function exportarSolicitudDevolucion() {
   const compras = comprasSeleccionadasDevolver();
   if (!compras.length) { mostrarToast("Selecciona al menos una compra"); return; }
   const periodo = etiquetaPeriodo($("devolver-desde").value, $("devolver-hasta").value);
+  const tcFijo = parseFloat($("devolver-tc").value) || 0;
   const boton = $("boton-exportar-devolucion");
   const textoOriginal = boton.textContent;
   boton.disabled = true; boton.textContent = "Generando…";
   try {
     if ($("devolver-formato").value === "xlsx") {
-      const wb = await construirExcelDevolucion(compras, periodo);
+      const wb = await construirExcelDevolucion(compras, periodo, tcFijo);
       await descargarExcel(wb, `Solicitud de Devolucion - Fernando Flores - ${hoyIso()}.xlsx`);
     } else {
-      construirPdfDevolucion(compras, periodo).save(`Solicitud de Devolucion - Fernando Flores - ${hoyIso()}.pdf`);
+      construirPdfDevolucion(compras, periodo, tcFijo).save(`Solicitud de Devolucion - Fernando Flores - ${hoyIso()}.pdf`);
     }
   } catch (e) {
     mostrarToast("Error: " + e.message);
@@ -756,6 +781,7 @@ let pendientesDevolver = [];
 async function abrirDevolver() {
   $("devolver-desde").value = "";
   $("devolver-hasta").value = "";
+  $("devolver-tc").value = "";
   $("devolver-lista").innerHTML = "";
   $("devolver-vacio").textContent = "Cargando…";
   $("devolver-vacio").classList.remove("oculto");
@@ -820,7 +846,8 @@ $("boton-confirmar-devolver").addEventListener("click", async () => {
     // El PDF de la solicitud que se marca como pagada queda archivado en Drive como sustento, ademas del
     // comprobante de la transferencia si lo adjuntas — asi queda el "que se pidio" junto al "que se pago".
     const periodo = etiquetaPeriodo($("devolver-desde").value, $("devolver-hasta").value);
-    const pdfDoc = construirPdfDevolucion(compras, periodo);
+    const tcFijo = parseFloat($("devolver-tc").value) || 0;
+    const pdfDoc = construirPdfDevolucion(compras, periodo, tcFijo);
     const datos = {
       ids: compras.map((c) => c.id),
       solicitud: $("devolver-solicitud").value.trim(),
@@ -1026,7 +1053,7 @@ async function leerBcpExcel(file, moneda) {
 
 let filasImportar = [];
 
-function abrirImportar() {
+async function abrirImportar() {
   filasImportar = [];
   $("i-archivo").value = "";
   $("importar-estado").textContent = "";
@@ -1035,11 +1062,12 @@ function abrirImportar() {
   $("boton-confirmar-importar").disabled = true;
   $("boton-confirmar-importar").classList.remove("oculto");
   $("boton-cancelar-importar").textContent = "Cancelar";
+  $("pantalla-importar").classList.remove("oculto");
+  await asegurarConfig();
   if (configCache) {
     llenarSelect($("i-cuenta"), (configCache.cuentas || []).map((c) => ({ valor: c, texto: c })));
     llenarSelect($("i-moneda"), configCache.monedas.map((m) => ({ valor: m, texto: m })), "PEN");
   }
-  $("pantalla-importar").classList.remove("oculto");
 }
 
 function cerrarImportar() {

@@ -245,12 +245,18 @@
         <input class="campo" type="month" id="devolver-hasta">
       </div>
     </div>
-    <div class="campo-grupo">
-      <label for="devolver-formato">Formato de exportación</label>
-      <select class="campo" id="devolver-formato">
-        <option value="pdf">PDF (para enviar)</option>
-        <option value="xlsx">Excel (.xlsx)</option>
-      </select>
+    <div class="fila-2">
+      <div class="campo-grupo">
+        <label for="devolver-formato">Formato de exportación</label>
+        <select class="campo" id="devolver-formato">
+          <option value="pdf">PDF (para enviar)</option>
+          <option value="xlsx">Excel (.xlsx)</option>
+        </select>
+      </div>
+      <div class="campo-grupo">
+        <label for="devolver-tc">TC S/. por USD (opcional)</label>
+        <input class="campo" type="number" step="0.001" min="0" id="devolver-tc" placeholder="Del mes de cada fila">
+      </div>
     </div>
     <p class="importar-subtitulo" id="devolver-vacio">Cargando…</p>
     <div id="devolver-lista"></div>
