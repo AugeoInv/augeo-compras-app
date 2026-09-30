@@ -52,7 +52,7 @@
     </div>
 
     <div class="tarjeta">
-      <h2>Ultimas compras</h2>
+      <h2>Ultimas compras (toca una para editarla)</h2>
       <div id="lista-compras"><div class="vacio">Cargando…</div></div>
     </div>
   </main>
@@ -129,6 +129,98 @@
     <button class="boton-secundario" id="boton-cancelar-registro" type="button">Cancelar</button>
     <button class="boton-primario" id="boton-guardar" type="button">Guardar</button>
   </div>
+</section>
+
+<section id="pantalla-editar" class="oculto">
+  <header class="app-bar">
+    <h1>Editar compra</h1>
+    <button id="boton-cerrar-editar">✕</button>
+  </header>
+  <main>
+    <form id="form-editar">
+      <div class="fila-2">
+        <div class="campo-grupo">
+          <label for="e-fecha">Fecha</label>
+          <input class="campo" type="date" id="e-fecha" required>
+        </div>
+        <div class="campo-grupo">
+          <label for="e-moneda">Moneda</label>
+          <select class="campo" id="e-moneda" required></select>
+        </div>
+      </div>
+
+      <div class="campo-grupo">
+        <label for="e-proveedor">Proveedor</label>
+        <input class="campo" type="text" id="e-proveedor" required>
+      </div>
+
+      <div class="campo-grupo">
+        <label for="e-monto">Monto</label>
+        <input class="campo" type="number" step="0.01" min="0.01" id="e-monto" required>
+      </div>
+
+      <div class="fila-2">
+        <div class="campo-grupo">
+          <label for="e-categoria">Categoria</label>
+          <select class="campo" id="e-categoria" required></select>
+        </div>
+        <div class="campo-grupo">
+          <label for="e-metodo">Metodo de pago</label>
+          <select class="campo" id="e-metodo" required></select>
+        </div>
+      </div>
+
+      <div class="campo-grupo">
+        <label for="e-comprobante">N° de comprobante</label>
+        <input class="campo" type="text" id="e-comprobante">
+      </div>
+
+      <div class="campo-grupo">
+        <label for="e-concepto">Concepto</label>
+        <input class="campo" type="text" id="e-concepto">
+      </div>
+
+      <div class="campo-grupo">
+        <label for="e-nota">Nota</label>
+        <input class="campo" type="text" id="e-nota">
+      </div>
+    </form>
+
+    <div id="editar-estado-zona" class="tarjeta oculto">
+      <h2>Devolucion</h2>
+      <p id="editar-estado-texto"></p>
+      <button class="boton-secundario" id="boton-marcar-devuelto" type="button">✓ Marcar como ya devuelto</button>
+    </div>
+  </main>
+  <div class="acciones-registro">
+    <button class="boton-secundario" id="boton-cancelar-editar" type="button">Cancelar</button>
+    <button class="boton-primario" id="boton-guardar-editar" type="button">Guardar cambios</button>
+  </div>
+</section>
+
+<section id="pantalla-resolver" class="oculto">
+  <header class="app-bar">
+    <h1>Resolver movimiento</h1>
+    <button id="boton-cerrar-resolver">✕</button>
+  </header>
+  <main>
+    <div class="tarjeta" id="resolver-info"></div>
+
+    <div class="tarjeta">
+      <h2>Vincular a una compra ya registrada</h2>
+      <input class="campo" type="text" id="resolver-buscar" placeholder="Buscar por proveedor…">
+      <div id="resolver-resultados"></div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>O marcar directamente</h2>
+      <input class="campo" type="text" id="resolver-nota" placeholder="Motivo (para «sin factura»)">
+      <div class="acciones-resolver">
+        <button class="boton-secundario" id="boton-resolver-justificado" type="button">Sin factura (justificado)</button>
+        <button class="boton-secundario" id="boton-resolver-ignorar" type="button">Ignorar</button>
+      </div>
+    </div>
+  </main>
 </section>
 
 <div id="toast" class="toast oculto"></div>

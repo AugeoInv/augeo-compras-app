@@ -138,12 +138,30 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
   color: var(--texto); font-size: 13px; line-height: 1.4;
 }
 .conciliacion-motivo { color: var(--texto-suave); font-size: 12px; margin-top: 2px; }
+.boton-resolver {
+  margin-top: 6px; background: var(--azul); color: #fff; border: none; padding: 6px 12px;
+  border-radius: 8px; font-size: 12px; font-weight: 600;
+}
+
+.acciones-resolver { display: flex; gap: 10px; margin-top: 10px; }
+.acciones-resolver button { flex: 1; }
+#resolver-buscar { margin-top: 6px; }
+.resultado-item {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 10px; border-top: 1px solid var(--borde); cursor: pointer; font-size: 13px;
+}
+.resultado-item:active { background: var(--fondo); }
+.resultado-item .r-monto { font-weight: 700; white-space: nowrap; }
+
+#editar-estado-zona h2 { margin-bottom: 6px; }
+#editar-estado-texto { font-size: 13px; color: var(--texto-suave); margin: 0 0 10px; }
 
 .resumen-total { font-size: 28px; font-weight: 700; margin: 0; }
 .resumen-fila { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-top: 1px solid var(--borde); }
 .resumen-fila:first-of-type { border-top: none; }
 
-.compra-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--borde); gap: 10px; }
+.compra-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--borde); gap: 10px; cursor: pointer; }
+.compra-item:active { background: var(--fondo); }
 .compra-item:first-child { border-top: none; }
 .compra-info { min-width: 0; }
 .compra-proveedor { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

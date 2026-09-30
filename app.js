@@ -207,11 +207,11 @@ function llenarSelect(select, opciones, seleccionar) {
   if (seleccionar) select.value = seleccionar;
 }
 
-function llenarFormularioConConfig() {
+function llenarFormularioConConfig(prefijo = "c", moneda = "PEN", metodo = "empresa") {
   if (!configCache) return;
-  llenarSelect($("c-moneda"), configCache.monedas.map((m) => ({ valor: m, texto: m })), "PEN");
-  llenarSelect($("c-categoria"), configCache.categorias.map((c) => ({ valor: c, texto: c })));
-  llenarSelect($("c-metodo"), Object.entries(configCache.metodos).map(([k, v]) => ({ valor: k, texto: v })), "empresa");
+  llenarSelect($(prefijo + "-moneda"), configCache.monedas.map((m) => ({ valor: m, texto: m })), moneda);
+  llenarSelect($(prefijo + "-categoria"), configCache.categorias.map((c) => ({ valor: c, texto: c })));
+  llenarSelect($(prefijo + "-metodo"), Object.entries(configCache.metodos).map(([k, v]) => ({ valor: k, texto: v })), metodo);
 }
 
 // ---------------------------------------------------------------------------------------------- resumen y lista
@@ -252,6 +252,14 @@ $("selector-mes-input").addEventListener("change", (e) => { if (e.target.value) 
 
 let ultimaConciliacion = null;
 let conciliacionAbierta = false;
+let ultimasCompras = [];
+
+$("lista-compras").addEventListener("click", (e) => {
+  const item = e.target.closest(".compra-item");
+  if (!item) return;
+  const compra = ultimasCompras[Number(item.dataset.idx)];
+  if (compra) abrirEditar(compra);
+});
 
 function renderConciliacion(conc, alternarAbierto) {
   if (alternarAbierto) conciliacionAbierta = !conciliacionAbierta;
@@ -275,14 +283,21 @@ function renderConciliacion(conc, alternarAbierto) {
     sinMovimiento.forEach((g) => {
       html += `<div class="conciliacion-item">🧾 ${escaparHtml(g.proveedor)} — ${g.fecha} — ${formatoMoneda(g.monto, g.moneda)}<div class="conciliacion-motivo">Registrada como "${escaparHtml(g.metodo)}" pero no aparece cargo bancario que le calce</div></div>`;
     });
-    sinFactura.forEach((m) => {
-      html += `<div class="conciliacion-item">🏦 ${escaparHtml(m.descripcion)} — ${m.fecha} — ${formatoMoneda(Math.abs(m.monto), m.moneda)}<div class="conciliacion-motivo">Salio del banco (${escaparHtml(m.cuenta)}) y no tiene ninguna compra registrada que le calce</div></div>`;
+    sinFactura.forEach((m, i) => {
+      html += `<div class="conciliacion-item">🏦 ${escaparHtml(m.descripcion)} — ${m.fecha} — ${formatoMoneda(Math.abs(m.monto), m.moneda)}<div class="conciliacion-motivo">Salio del banco (${escaparHtml(m.cuenta)}) y no tiene ninguna compra registrada que le calce</div><button class="boton-resolver" type="button" data-idx="${i}">Resolver</button></div>`;
     });
   }
   estado.innerHTML = html;
 }
 
-$("conciliacion-estado").addEventListener("click", () => {
+$("conciliacion-estado").addEventListener("click", (e) => {
+  const boton = e.target.closest(".boton-resolver");
+  if (boton) {
+    e.stopPropagation();
+    const mov = ultimaConciliacion.movimientos_sin_factura[Number(boton.dataset.idx)];
+    if (mov) abrirResolver(mov);
+    return;
+  }
   if (ultimaConciliacion) renderConciliacion(ultimaConciliacion, true);
 });
 
@@ -309,11 +324,12 @@ async function cargarResumenYLista() {
     renderConciliacion(conc, false);
 
     const cont = $("lista-compras");
-    if (!lista.compras.length) {
+    ultimasCompras = lista.compras.slice(0, 15);
+    if (!ultimasCompras.length) {
       cont.innerHTML = '<div class="vacio">Sin compras este mes todavia</div>';
     } else {
-      cont.innerHTML = lista.compras.slice(0, 15).map((c) => `
-        <div class="compra-item">
+      cont.innerHTML = ultimasCompras.map((c, i) => `
+        <div class="compra-item" data-idx="${i}">
           <div class="compra-info">
             <div class="compra-proveedor">${escaparHtml(c.proveedor)}</div>
             <div class="compra-meta">${c.fecha} · ${escaparHtml(c.categoria)}${c.estado === "Pendiente" ? '<span class="pill pendiente">por devolver</span>' : ""}</div>
@@ -440,6 +456,186 @@ $("boton-guardar").addEventListener("click", async () => {
     boton.disabled = false; boton.textContent = "Guardar";
   }
 });
+
+// ---------------------------------------------------------------------------------------------- pantalla de editar
+let compraEnEdicion = null;
+
+function abrirEditar(compra) {
+  compraEnEdicion = compra;
+  $("e-fecha").value = compra.fecha;
+  $("e-proveedor").value = compra.proveedor;
+  $("e-monto").value = compra.monto;
+  $("e-comprobante").value = compra.comprobante || "";
+  $("e-concepto").value = compra.concepto || "";
+  $("e-nota").value = compra.nota || "";
+
+  const claveMetodo = configCache ? Object.entries(configCache.metodos).find(([, v]) => v === compra.metodo) : null;
+  llenarFormularioConConfig("e", compra.moneda, claveMetodo ? claveMetodo[0] : "empresa");
+  $("e-categoria").value = compra.categoria;
+
+  const esPropio = configCache && compra.metodo === configCache.metodos.propio;
+  const zona = $("editar-estado-zona");
+  if (esPropio) {
+    zona.classList.remove("oculto");
+    $("editar-estado-texto").textContent = "Estado actual: " + compra.estado;
+    $("boton-marcar-devuelto").classList.toggle("oculto", compra.estado === "Pagada");
+  } else {
+    zona.classList.add("oculto");
+  }
+
+  $("pantalla-editar").classList.remove("oculto");
+}
+
+function cerrarEditar() {
+  $("pantalla-editar").classList.add("oculto");
+  compraEnEdicion = null;
+}
+
+$("boton-cerrar-editar").addEventListener("click", cerrarEditar);
+$("boton-cancelar-editar").addEventListener("click", cerrarEditar);
+
+$("boton-guardar-editar").addEventListener("click", async () => {
+  if (!compraEnEdicion) return;
+  const proveedor = $("e-proveedor").value.trim();
+  const monto = parseFloat($("e-monto").value);
+  const fecha = $("e-fecha").value;
+  if (!proveedor || !fecha || !monto || monto <= 0) {
+    mostrarToast("Falta proveedor, fecha o monto valido");
+    return;
+  }
+  const boton = $("boton-guardar-editar");
+  boton.disabled = true; boton.textContent = "Guardando…";
+  try {
+    await llamar("editar", {
+      id: compraEnEdicion.id,
+      campos: {
+        fecha, proveedor, monto,
+        categoria: $("e-categoria").value,
+        moneda: $("e-moneda").value,
+        metodo: $("e-metodo").value,
+        comprobante: $("e-comprobante").value.trim(),
+        concepto: $("e-concepto").value.trim(),
+        nota: $("e-nota").value.trim(),
+      },
+    });
+    mostrarToast("Cambios guardados");
+    cerrarEditar();
+    cargarResumenYLista();
+  } catch (e) {
+    mostrarToast("Error: " + e.message);
+  } finally {
+    boton.disabled = false; boton.textContent = "Guardar cambios";
+  }
+});
+
+$("boton-marcar-devuelto").addEventListener("click", async () => {
+  if (!compraEnEdicion) return;
+  if (!confirm("¿Confirmas que ya te devolviste este dinero?")) return;
+  try {
+    await llamar("estado", { id: compraEnEdicion.id, estado: "Pagada" });
+    mostrarToast("Marcado como devuelto");
+    cerrarEditar();
+    cargarResumenYLista();
+  } catch (e) {
+    mostrarToast("Error: " + e.message);
+  }
+});
+
+// ---------------------------------------------------------------------------------------------- pantalla de resolver movimiento
+let movimientoEnResolucion = null;
+let gastosParaVincular = [];
+
+async function abrirResolver(mov) {
+  movimientoEnResolucion = mov;
+  $("resolver-info").innerHTML = `
+    <div class="compra-proveedor">${escaparHtml(mov.descripcion)}</div>
+    <div class="compra-meta">${mov.fecha} · ${escaparHtml(mov.cuenta)}</div>
+    <p class="resumen-total">${formatoMoneda(Math.abs(mov.monto), mov.moneda)}</p>
+  `;
+  $("resolver-buscar").value = "";
+  $("resolver-nota").value = "";
+  $("resolver-resultados").innerHTML = "";
+  $("pantalla-resolver").classList.remove("oculto");
+
+  try {
+    const r = await llamar("listar", { estados: ["Pendiente", "En solicitud", "Pagada", "No aplica"] });
+    gastosParaVincular = r.compras;
+  } catch (e) {
+    gastosParaVincular = [];
+  }
+  renderResultadosResolver("");
+}
+
+function cerrarResolver() {
+  $("pantalla-resolver").classList.add("oculto");
+  movimientoEnResolucion = null;
+}
+
+function renderResultadosResolver(texto) {
+  const q = texto.trim().toLowerCase();
+  const cont = $("resolver-resultados");
+  const candidatos = gastosParaVincular.filter((g) => !q || g.proveedor.toLowerCase().includes(q)).slice(0, 20);
+  if (!candidatos.length) {
+    cont.innerHTML = '<div class="vacio">Sin resultados</div>';
+    return;
+  }
+  cont.innerHTML = candidatos.map((g) => `
+    <div class="resultado-item" data-id="${g.id}">
+      <div>
+        <div>${escaparHtml(g.proveedor)}</div>
+        <div class="compra-meta">${g.fecha} · ${escaparHtml(g.categoria)}</div>
+      </div>
+      <div class="r-monto">${formatoMoneda(g.monto, g.moneda)}</div>
+    </div>
+  `).join("");
+}
+
+$("resolver-buscar").addEventListener("input", (e) => renderResultadosResolver(e.target.value));
+
+$("resolver-resultados").addEventListener("click", async (e) => {
+  const item = e.target.closest(".resultado-item");
+  if (!item || !movimientoEnResolucion) return;
+  const gasto = gastosParaVincular.find((g) => g.id === item.dataset.id);
+  if (!gasto) return;
+  if (!confirm(`¿Vincular este movimiento a "${gasto.proveedor}" (${formatoMoneda(gasto.monto, gasto.moneda)})?`)) return;
+  try {
+    await llamar("marcar_movimiento", { id: movimientoEnResolucion.id, estado: "Vinculado", gasto_id: gasto.id });
+    mostrarToast("Vinculado");
+    cerrarResolver();
+    cargarResumenYLista();
+  } catch (e) {
+    mostrarToast("Error: " + e.message);
+  }
+});
+
+$("boton-resolver-justificado").addEventListener("click", async () => {
+  if (!movimientoEnResolucion) return;
+  const nota = $("resolver-nota").value.trim();
+  if (!nota) { mostrarToast("Escribe el motivo"); return; }
+  try {
+    await llamar("marcar_movimiento", { id: movimientoEnResolucion.id, estado: "Sin factura (justificado)", nota });
+    mostrarToast("Marcado como sin factura (justificado)");
+    cerrarResolver();
+    cargarResumenYLista();
+  } catch (e) {
+    mostrarToast("Error: " + e.message);
+  }
+});
+
+$("boton-resolver-ignorar").addEventListener("click", async () => {
+  if (!movimientoEnResolucion) return;
+  if (!confirm("¿Marcar este movimiento como Ignorado (nunca necesita factura)?")) return;
+  try {
+    await llamar("marcar_movimiento", { id: movimientoEnResolucion.id, estado: "Ignorado" });
+    mostrarToast("Marcado como ignorado");
+    cerrarResolver();
+    cargarResumenYLista();
+  } catch (e) {
+    mostrarToast("Error: " + e.message);
+  }
+});
+
+$("boton-cerrar-resolver").addEventListener("click", cerrarResolver);
 
 // ---------------------------------------------------------------------------------------------- arranque
 function actualizarAvisoOffline() {
