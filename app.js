@@ -550,6 +550,9 @@ function aFechaPe(iso) {
   return `${d}/${m}/${a}`;
 }
 
+const MESES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre",
+                  "Noviembre", "Diciembre"];
+
 /** TC del mes (o el ultimo disponible antes de ese mes, o el de respaldo): misma logica que tcDe_ en Code.gs. */
 function tcParaMes(mes) {
   if (configCache && configCache.tc && configCache.tc[mes]) return configCache.tc[mes];
@@ -566,58 +569,82 @@ function montoEnUsd(c) {
   return c.monto;
 }
 
-async function exportarSolicitudDevolucion() {
-  const boton = $("boton-exportar-devolucion");
-  const textoOriginal = boton.textContent;
-  boton.disabled = true; boton.textContent = "Generando…";
-  try {
-    const r = await llamar("listar", { metodo: "propio", estados: ["Pendiente", "En solicitud"] });
-    const compras = r.compras.slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
-    if (!compras.length) { mostrarToast("No hay compras pendientes de devolver"); return; }
+/** Etiqueta del periodo para el encabezado del Excel, a partir de los filtros Desde/Hasta (AAAA-MM o vacios). */
+function etiquetaPeriodo(desde, hasta) {
+  if (!desde && !hasta) return "Todo lo pendiente (corte al " + aFechaPe(hoyIso()) + ")";
+  const nombreMes = (m) => { const [a, mm] = m.split("-"); return `${MESES_ES[Number(mm) - 1]} ${a}`; };
+  if (desde && hasta && desde === hasta) return nombreMes(desde);
+  if (desde && hasta) return `${nombreMes(desde)} a ${nombreMes(hasta)}`;
+  if (desde) return `Desde ${nombreMes(desde)}`;
+  return `Hasta ${nombreMes(hasta)}`;
+}
 
-    const filas = [
-      ["AUGEO INVESTMENTS E.I.R.L."],
-      ["SOLICITUD DE DEVOLUCIÓN - GASTOS PAGADOS CON TARJETA PERSONAL"],
-      ["PERIODO", "", "Corte al " + aFechaPe(hoyIso()), "", "RESPONSABLE:", "FERNANDO FLORES"],
-      [],
-      ["FECHA", "N° / ID", "PROVEEDOR", "CONCEPTO", "USD", "S/.", "MONTO USD"],
-    ];
-    let totalUsd = 0, subPen = 0, subUsd = 0, subEur = 0;
-    compras.forEach((c) => {
-      const usd = Math.round(montoEnUsd(c) * 100) / 100;
-      totalUsd += usd;
-      if (c.moneda === "PEN") subPen += c.monto;
-      else if (c.moneda === "USD") subUsd += c.monto;
-      else if (c.moneda === "EUR") subEur += c.monto;
-      filas.push([
-        aFechaPe(c.fecha), c.comprobante || "", c.proveedor, c.concepto || "",
-        c.moneda === "USD" || c.moneda === "EUR" ? c.monto : "",
-        c.moneda === "PEN" ? c.monto : "",
-        usd,
-      ]);
+function construirLibroDevolucion(compras, periodoLabel) {
+  const filas = [
+    ["AUGEO INVESTMENTS E.I.R.L."],
+    ["SOLICITUD DE DEVOLUCIÓN - GASTOS PAGADOS CON TARJETA PERSONAL"],
+    ["PERIODO", "", periodoLabel, "", "RESPONSABLE:", "FERNANDO FLORES"],
+    [],
+    ["FECHA", "N° / ID", "PROVEEDOR", "CONCEPTO", "USD", "S/.", "MONTO USD"],
+  ];
+  let totalUsd = 0, subPen = 0, subUsd = 0, subEur = 0;
+  compras.forEach((c) => {
+    const usd = Math.round(montoEnUsd(c) * 100) / 100;
+    totalUsd += usd;
+    if (c.moneda === "PEN") subPen += c.monto;
+    else if (c.moneda === "USD") subUsd += c.monto;
+    else if (c.moneda === "EUR") subEur += c.monto;
+    filas.push([
+      aFechaPe(c.fecha), c.comprobante || "", c.proveedor, c.concepto || "",
+      c.moneda === "USD" || c.moneda === "EUR" ? c.monto : "",
+      c.moneda === "PEN" ? c.monto : "",
+      usd,
+    ]);
+  });
+  const filaTotal = filas.length + 2;   // fila 1-based del TOTAL: +1 por la fila en blanco, +1 por si misma
+  filas.push([]);
+  filas.push(["Responsable: FERNANDO FLORES", "", "", "TOTAL A REEMBOLSAR (USD)", "", "", Math.round(totalUsd * 100) / 100]);
+  filas.push(["", "", "Subtotales por moneda original (referencia):", "", subUsd || "", subPen || "", subEur || ""]);
+  filas.push(["Nota: cada fila se convierte a USD con el tipo de cambio del mes de su fecha (o el ultimo disponible antes de ese mes). Verifica el TC con Contabilidad antes de enviar."]);
+
+  const ws = XLSX.utils.aoa_to_sheet(filas);
+  ws["!cols"] = [{ wch: 12 }, { wch: 16 }, { wch: 26 }, { wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 12 }];
+  // Fusiona las filas de titulo/periodo para que se vean como encabezado en vez de una celda sola en A.
+  ws["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } },
+    { s: { r: 2, c: 2 }, e: { r: 2, c: 3 } },
+  ];
+  // Formato de moneda en las columnas de montos (USD, S/., MONTO USD) para todas las filas de datos + el total.
+  for (let fila = 6; fila <= filaTotal; fila++) {
+    ["E", "F", "G"].forEach((col) => {
+      const celda = ws[col + fila];
+      if (celda && typeof celda.v === "number") celda.z = "#,##0.00";
     });
-    filas.push([]);
-    filas.push(["Responsable: FERNANDO FLORES", "", "", "TOTAL A REEMBOLSAR (USD)", "", "", Math.round(totalUsd * 100) / 100]);
-    filas.push(["", "", "Subtotales por moneda original (referencia):", "", subUsd || "", subPen || "", subEur || ""]);
-    filas.push(["Nota: cada fila se convierte a USD con el tipo de cambio del mes de su fecha (o el ultimo disponible antes de ese mes). Verifica el TC con Contabilidad antes de enviar."]);
-
-    const ws = XLSX.utils.aoa_to_sheet(filas);
-    ws["!cols"] = [{ wch: 12 }, { wch: 16 }, { wch: 26 }, { wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 12 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Solicitud Devolucion");
-    XLSX.writeFile(wb, `Solicitud de Devolucion - Fernando Flores - ${hoyIso()}.xlsx`);
-  } catch (e) {
-    mostrarToast("Error: " + e.message);
-  } finally {
-    boton.disabled = false; boton.textContent = textoOriginal;
   }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Solicitud Devolucion");
+  return wb;
+}
+
+function exportarSolicitudDevolucion() {
+  const ids = Array.from($("devolver-lista").querySelectorAll("input[type=checkbox]:checked")).map((el) => el.dataset.id);
+  const compras = pendientesDevolver.filter((c) => ids.includes(c.id));
+  if (!compras.length) { mostrarToast("Selecciona al menos una compra"); return; }
+  const periodo = etiquetaPeriodo($("devolver-desde").value, $("devolver-hasta").value);
+  const wb = construirLibroDevolucion(compras, periodo);
+  XLSX.writeFile(wb, `Solicitud de Devolucion - Fernando Flores - ${hoyIso()}.xlsx`);
 }
 
 $("boton-exportar-devolucion").addEventListener("click", exportarSolicitudDevolucion);
 
+let todosPendientesDevolver = [];
 let pendientesDevolver = [];
 
 async function abrirDevolver() {
+  $("devolver-desde").value = "";
+  $("devolver-hasta").value = "";
   $("devolver-lista").innerHTML = "";
   $("devolver-vacio").textContent = "Cargando…";
   $("devolver-vacio").classList.remove("oculto");
@@ -626,17 +653,24 @@ async function abrirDevolver() {
   $("pantalla-devolver").classList.remove("oculto");
   try {
     const r = await llamar("listar", { metodo: "propio", estados: ["Pendiente", "En solicitud"] });
-    pendientesDevolver = r.compras.slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+    todosPendientesDevolver = r.compras.slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
   } catch (e) {
-    pendientesDevolver = [];
+    todosPendientesDevolver = [];
   }
-  renderListaDevolver();
+  filtrarYRenderizarDevolver();
 }
 
-function renderListaDevolver() {
+function filtrarYRenderizarDevolver() {
+  const desde = $("devolver-desde").value;
+  const hasta = $("devolver-hasta").value;
+  pendientesDevolver = todosPendientesDevolver.filter((c) => {
+    const mes = c.fecha.slice(0, 7);
+    return (!desde || mes >= desde) && (!hasta || mes <= hasta);
+  });
   const cont = $("devolver-lista");
   if (!pendientesDevolver.length) {
-    $("devolver-vacio").textContent = "No hay compras pendientes de devolver.";
+    $("devolver-vacio").textContent = todosPendientesDevolver.length
+      ? "Nada pendiente en ese periodo." : "No hay compras pendientes de devolver.";
     $("devolver-vacio").classList.remove("oculto");
     cont.innerHTML = "";
     return;
@@ -654,14 +688,17 @@ function renderListaDevolver() {
   `).join("");
 }
 
+$("devolver-desde").addEventListener("change", filtrarYRenderizarDevolver);
+$("devolver-hasta").addEventListener("change", filtrarYRenderizarDevolver);
+
 function cerrarDevolver() {
   $("pantalla-devolver").classList.add("oculto");
+  todosPendientesDevolver = [];
   pendientesDevolver = [];
 }
 
 $("boton-abrir-devolver").addEventListener("click", abrirDevolver);
 $("boton-cerrar-devolver").addEventListener("click", cerrarDevolver);
-$("boton-cancelar-devolver").addEventListener("click", cerrarDevolver);
 
 $("boton-confirmar-devolver").addEventListener("click", async () => {
   const ids = Array.from($("devolver-lista").querySelectorAll("input[type=checkbox]:checked")).map((el) => el.dataset.id);
@@ -679,7 +716,7 @@ $("boton-confirmar-devolver").addEventListener("click", async () => {
   } catch (e) {
     mostrarToast("Error: " + e.message);
   } finally {
-    boton.disabled = false; boton.textContent = "Marcar pagado";
+    boton.disabled = false; boton.textContent = "✓ Marcar pagado";
   }
 });
 

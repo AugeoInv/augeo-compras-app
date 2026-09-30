@@ -41,8 +41,7 @@
       <h2>Por devolverte (todos los meses)</h2>
       <p class="resumen-total" id="devolver-total">—</p>
       <div class="acciones-devolver">
-        <button class="boton-secundario" id="boton-exportar-devolucion" type="button">📄 Exportar solicitud</button>
-        <button class="boton-secundario" id="boton-abrir-devolver" type="button">✓ Marcar como pagado</button>
+        <button class="boton-secundario" id="boton-abrir-devolver" type="button">📄 Solicitud de devolución</button>
       </div>
     </div>
 
@@ -232,15 +231,25 @@
 
 <section id="pantalla-devolver" class="oculto">
   <header class="app-bar">
-    <h1>Marcar como pagado</h1>
+    <h1>Solicitud de devolución</h1>
     <button id="boton-cerrar-devolver">✕</button>
   </header>
   <main>
+    <div class="fila-2">
+      <div class="campo-grupo">
+        <label for="devolver-desde">Desde (opcional)</label>
+        <input class="campo" type="month" id="devolver-desde">
+      </div>
+      <div class="campo-grupo">
+        <label for="devolver-hasta">Hasta (opcional)</label>
+        <input class="campo" type="month" id="devolver-hasta">
+      </div>
+    </div>
     <p class="importar-subtitulo" id="devolver-vacio">Cargando…</p>
     <div id="devolver-lista"></div>
 
     <div class="campo-grupo" id="devolver-comprobante-zona">
-      <label for="devolver-comprobante">Comprobante de la transferencia (opcional)</label>
+      <label for="devolver-comprobante">Comprobante de la transferencia (opcional, para "Marcar pagado")</label>
       <input class="campo" type="file" id="devolver-comprobante" accept="image/*,application/pdf">
     </div>
     <div class="campo-grupo">
@@ -249,8 +258,8 @@
     </div>
   </main>
   <div class="acciones-registro">
-    <button class="boton-secundario" id="boton-cancelar-devolver" type="button">Cancelar</button>
-    <button class="boton-primario" id="boton-confirmar-devolver" type="button">Marcar pagado</button>
+    <button class="boton-secundario" id="boton-exportar-devolucion" type="button">📄 Exportar</button>
+    <button class="boton-primario" id="boton-confirmar-devolver" type="button">✓ Marcar pagado</button>
   </div>
 </section>
 
