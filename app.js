@@ -229,6 +229,7 @@ function irAMes(nuevo) {
   $("resumen-total").textContent = "Cargando…";
   $("resumen-detalle").innerHTML = "";
   $("conciliacion-estado").innerHTML = "";
+  conciliacionAbierta = false;
   cargarResumenYLista();
 }
 
@@ -249,6 +250,42 @@ $("resumen-mes-label").addEventListener("click", () => {
 });
 $("selector-mes-input").addEventListener("change", (e) => { if (e.target.value) irAMes(e.target.value); });
 
+let ultimaConciliacion = null;
+let conciliacionAbierta = false;
+
+function renderConciliacion(conc, alternarAbierto) {
+  if (alternarAbierto) conciliacionAbierta = !conciliacionAbierta;
+  const sinFactura = conc.movimientos_sin_factura;
+  const sinMovimiento = conc.gastos_sin_movimiento;
+  const estado = $("conciliacion-estado");
+
+  if (!sinFactura.length && !sinMovimiento.length) {
+    estado.className = "ok";
+    estado.innerHTML = "✓ Mes conciliado: todo el banco tiene factura";
+    return;
+  }
+
+  estado.className = "pendiente";
+  const partes = [];
+  if (sinFactura.length) partes.push(`${sinFactura.length} movimiento${sinFactura.length === 1 ? "" : "s"} sin factura`);
+  if (sinMovimiento.length) partes.push(`${sinMovimiento.length} factura${sinMovimiento.length === 1 ? "" : "s"} sin movimiento`);
+  let html = `<div class="conciliacion-resumen">⚠ ${partes.join(", ")} <span class="ver-mas">${conciliacionAbierta ? "ocultar" : "ver cuales"}</span></div>`;
+
+  if (conciliacionAbierta) {
+    sinMovimiento.forEach((g) => {
+      html += `<div class="conciliacion-item">🧾 ${escaparHtml(g.proveedor)} — ${g.fecha} — ${formatoMoneda(g.monto, g.moneda)}<div class="conciliacion-motivo">Registrada como "${escaparHtml(g.metodo)}" pero no aparece cargo bancario que le calce</div></div>`;
+    });
+    sinFactura.forEach((m) => {
+      html += `<div class="conciliacion-item">🏦 ${escaparHtml(m.descripcion)} — ${m.fecha} — ${formatoMoneda(Math.abs(m.monto), m.moneda)}<div class="conciliacion-motivo">Salio del banco (${escaparHtml(m.cuenta)}) y no tiene ninguna compra registrada que le calce</div></div>`;
+    });
+  }
+  estado.innerHTML = html;
+}
+
+$("conciliacion-estado").addEventListener("click", () => {
+  if (ultimaConciliacion) renderConciliacion(ultimaConciliacion, true);
+});
+
 async function cargarResumenYLista() {
   $("mes-siguiente").disabled = mesActual >= MES_HOY;
   const mes = mesActual;
@@ -268,19 +305,8 @@ async function cargarResumenYLista() {
     });
     $("resumen-detalle").innerHTML = detalle;
 
-    const sinFactura = conc.movimientos_sin_factura.length;
-    const sinMovimiento = conc.gastos_sin_movimiento.length;
-    const estado = $("conciliacion-estado");
-    if (sinFactura === 0 && sinMovimiento === 0) {
-      estado.className = "ok";
-      estado.textContent = "✓ Mes conciliado: todo el banco tiene factura";
-    } else {
-      estado.className = "pendiente";
-      const partes = [];
-      if (sinFactura) partes.push(`${sinFactura} movimiento${sinFactura === 1 ? "" : "s"} sin factura`);
-      if (sinMovimiento) partes.push(`${sinMovimiento} factura${sinMovimiento === 1 ? "" : "s"} sin movimiento`);
-      estado.textContent = "⚠ " + partes.join(", ");
-    }
+    ultimaConciliacion = conc;
+    renderConciliacion(conc, false);
 
     const cont = $("lista-compras");
     if (!lista.compras.length) {
