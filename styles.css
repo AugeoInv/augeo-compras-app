@@ -157,6 +157,15 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 #editar-estado-zona h2 { margin-bottom: 6px; }
 #editar-estado-texto { font-size: 13px; color: var(--texto-suave); margin: 0 0 10px; }
 
+.acciones-devolver { display: flex; gap: 10px; margin-top: 12px; }
+.acciones-devolver button { flex: 1; font-size: 13px; padding: 10px 8px; }
+.devolver-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px; border-top: 1px solid var(--borde); font-size: 13px;
+}
+.devolver-item:first-child { border-top: none; }
+.devolver-item input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; }
+.devolver-item .r-monto { font-weight: 700; white-space: nowrap; margin-left: auto; }
+
 #importar-preview { margin-top: 10px; max-height: 340px; overflow-y: auto; background: var(--tarjeta); border-radius: var(--radio); }
 .importar-subtitulo { color: var(--texto-suave); font-size: 12px; margin-top: 10px; }
 
@@ -187,12 +196,12 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 }
 .fab:active { background: #00d8b9; }
 
-/* ---------- pantallas a pantalla completa (registro / editar / resolver) ---------- */
-#pantalla-registro, #pantalla-editar, #pantalla-resolver, #pantalla-importar {
+/* ---------- pantallas a pantalla completa (registro / editar / resolver / importar / devolver) ---------- */
+#pantalla-registro, #pantalla-editar, #pantalla-resolver, #pantalla-importar, #pantalla-devolver {
   position: fixed; inset: 0; background: var(--fondo); z-index: 20;
   display: flex; flex-direction: column;
 }
-#pantalla-registro main, #pantalla-editar main, #pantalla-resolver main, #pantalla-importar main {
+#pantalla-registro main, #pantalla-editar main, #pantalla-resolver main, #pantalla-importar main, #pantalla-devolver main {
   flex: 1; overflow-y: auto; padding-bottom: 30px;
 }
 

@@ -544,6 +544,145 @@ $("boton-marcar-devuelto").addEventListener("click", async () => {
   }
 });
 
+// ---------------------------------------------------------------------------------------------- solicitud de devolucion
+function aFechaPe(iso) {
+  const [a, m, d] = iso.split("-");
+  return `${d}/${m}/${a}`;
+}
+
+/** TC del mes (o el ultimo disponible antes de ese mes, o el de respaldo): misma logica que tcDe_ en Code.gs. */
+function tcParaMes(mes) {
+  if (configCache && configCache.tc && configCache.tc[mes]) return configCache.tc[mes];
+  const anteriores = configCache && configCache.tc ? Object.keys(configCache.tc).filter((m) => m < mes).sort() : [];
+  if (anteriores.length) return configCache.tc[anteriores[anteriores.length - 1]];
+  return { pen: 3.5, eur: 1.08 };
+}
+
+function montoEnUsd(c) {
+  const tc = tcParaMes(c.fecha.slice(0, 7));
+  if (c.moneda === "USD") return c.monto;
+  if (c.moneda === "PEN") return c.monto / tc.pen;
+  if (c.moneda === "EUR") return c.monto * tc.eur;
+  return c.monto;
+}
+
+async function exportarSolicitudDevolucion() {
+  const boton = $("boton-exportar-devolucion");
+  const textoOriginal = boton.textContent;
+  boton.disabled = true; boton.textContent = "Generando…";
+  try {
+    const r = await llamar("listar", { metodo: "propio", estados: ["Pendiente", "En solicitud"] });
+    const compras = r.compras.slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+    if (!compras.length) { mostrarToast("No hay compras pendientes de devolver"); return; }
+
+    const filas = [
+      ["AUGEO INVESTMENTS E.I.R.L."],
+      ["SOLICITUD DE DEVOLUCIÓN - GASTOS PAGADOS CON TARJETA PERSONAL"],
+      ["PERIODO", "", "Corte al " + aFechaPe(hoyIso()), "", "RESPONSABLE:", "FERNANDO FLORES"],
+      [],
+      ["FECHA", "N° / ID", "PROVEEDOR", "CONCEPTO", "USD", "S/.", "MONTO USD"],
+    ];
+    let totalUsd = 0, subPen = 0, subUsd = 0, subEur = 0;
+    compras.forEach((c) => {
+      const usd = Math.round(montoEnUsd(c) * 100) / 100;
+      totalUsd += usd;
+      if (c.moneda === "PEN") subPen += c.monto;
+      else if (c.moneda === "USD") subUsd += c.monto;
+      else if (c.moneda === "EUR") subEur += c.monto;
+      filas.push([
+        aFechaPe(c.fecha), c.comprobante || "", c.proveedor, c.concepto || "",
+        c.moneda === "USD" || c.moneda === "EUR" ? c.monto : "",
+        c.moneda === "PEN" ? c.monto : "",
+        usd,
+      ]);
+    });
+    filas.push([]);
+    filas.push(["Responsable: FERNANDO FLORES", "", "", "TOTAL A REEMBOLSAR (USD)", "", "", Math.round(totalUsd * 100) / 100]);
+    filas.push(["", "", "Subtotales por moneda original (referencia):", "", subUsd || "", subPen || "", subEur || ""]);
+    filas.push(["Nota: cada fila se convierte a USD con el tipo de cambio del mes de su fecha (o el ultimo disponible antes de ese mes). Verifica el TC con Contabilidad antes de enviar."]);
+
+    const ws = XLSX.utils.aoa_to_sheet(filas);
+    ws["!cols"] = [{ wch: 12 }, { wch: 16 }, { wch: 26 }, { wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Solicitud Devolucion");
+    XLSX.writeFile(wb, `Solicitud de Devolucion - Fernando Flores - ${hoyIso()}.xlsx`);
+  } catch (e) {
+    mostrarToast("Error: " + e.message);
+  } finally {
+    boton.disabled = false; boton.textContent = textoOriginal;
+  }
+}
+
+$("boton-exportar-devolucion").addEventListener("click", exportarSolicitudDevolucion);
+
+let pendientesDevolver = [];
+
+async function abrirDevolver() {
+  $("devolver-lista").innerHTML = "";
+  $("devolver-vacio").textContent = "Cargando…";
+  $("devolver-vacio").classList.remove("oculto");
+  $("devolver-comprobante").value = "";
+  $("devolver-solicitud").value = "";
+  $("pantalla-devolver").classList.remove("oculto");
+  try {
+    const r = await llamar("listar", { metodo: "propio", estados: ["Pendiente", "En solicitud"] });
+    pendientesDevolver = r.compras.slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+  } catch (e) {
+    pendientesDevolver = [];
+  }
+  renderListaDevolver();
+}
+
+function renderListaDevolver() {
+  const cont = $("devolver-lista");
+  if (!pendientesDevolver.length) {
+    $("devolver-vacio").textContent = "No hay compras pendientes de devolver.";
+    $("devolver-vacio").classList.remove("oculto");
+    cont.innerHTML = "";
+    return;
+  }
+  $("devolver-vacio").classList.add("oculto");
+  cont.innerHTML = pendientesDevolver.map((c) => `
+    <label class="devolver-item">
+      <input type="checkbox" data-id="${c.id}" checked>
+      <div>
+        <div>${escaparHtml(c.proveedor)}</div>
+        <div class="compra-meta">${c.fecha} · ${escaparHtml(c.categoria)}</div>
+      </div>
+      <div class="r-monto">${formatoMoneda(c.monto, c.moneda)}</div>
+    </label>
+  `).join("");
+}
+
+function cerrarDevolver() {
+  $("pantalla-devolver").classList.add("oculto");
+  pendientesDevolver = [];
+}
+
+$("boton-abrir-devolver").addEventListener("click", abrirDevolver);
+$("boton-cerrar-devolver").addEventListener("click", cerrarDevolver);
+$("boton-cancelar-devolver").addEventListener("click", cerrarDevolver);
+
+$("boton-confirmar-devolver").addEventListener("click", async () => {
+  const ids = Array.from($("devolver-lista").querySelectorAll("input[type=checkbox]:checked")).map((el) => el.dataset.id);
+  if (!ids.length) { mostrarToast("Selecciona al menos una compra"); return; }
+  const boton = $("boton-confirmar-devolver");
+  boton.disabled = true; boton.textContent = "Guardando…";
+  try {
+    const datos = { ids, solicitud: $("devolver-solicitud").value.trim() };
+    const file = $("devolver-comprobante").files[0];
+    if (file) datos.archivo = { mime: file.type || "application/pdf", base64: await fileABase64(file) };
+    await llamar("marcar_devueltas", datos);
+    mostrarToast(ids.length === 1 ? "1 compra marcada como pagada" : `${ids.length} compras marcadas como pagadas`);
+    cerrarDevolver();
+    cargarResumenYLista();
+  } catch (e) {
+    mostrarToast("Error: " + e.message);
+  } finally {
+    boton.disabled = false; boton.textContent = "Marcar pagado";
+  }
+});
+
 // ---------------------------------------------------------------------------------------------- pantalla de resolver movimiento
 let movimientoEnResolucion = null;
 let gastosParaVincular = [];
