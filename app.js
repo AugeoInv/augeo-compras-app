@@ -47,7 +47,14 @@ async function llamar(accion, datos = {}) {
   });
   if (!resp.ok) throw new Error("HTTP " + resp.status);
   const json = await resp.json();
-  if (!json.ok) throw new Error(json.error || "Error desconocido");
+  if (!json.ok) {
+    if (json.error === "Clave incorrecta") {
+      // la clave guardada en este celular ya no sirve (la cambiaron desde Ajustes.gs): vuelve a pedirla
+      localStorage.removeItem(CLAVE_KEY);
+      location.reload();
+    }
+    throw new Error(json.error || "Error desconocido");
+  }
   return json;
 }
 
@@ -215,33 +222,65 @@ function formatoMoneda(n, moneda) {
 const MES_HOY = hoyIso().slice(0, 7);
 let mesActual = MES_HOY;
 
+function irAMes(nuevo) {
+  if (nuevo > MES_HOY) return; // no tiene sentido navegar al futuro
+  mesActual = nuevo;
+  $("resumen-mes-label").textContent = mesActual === MES_HOY ? `Este mes (${mesActual})` : mesActual;
+  $("resumen-total").textContent = "Cargando…";
+  $("resumen-detalle").innerHTML = "";
+  $("conciliacion-estado").innerHTML = "";
+  cargarResumenYLista();
+}
+
 function desplazarMes(delta) {
   const [a, m] = mesActual.split("-").map(Number);
   const d = new Date(a, m - 1 + delta, 1);
-  const nuevo = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  if (nuevo > MES_HOY) return; // no tiene sentido navegar al futuro
-  mesActual = nuevo;
-  cargarResumenYLista();
+  irAMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
 }
 
 $("mes-anterior").addEventListener("click", () => desplazarMes(-1));
 $("mes-siguiente").addEventListener("click", () => desplazarMes(1));
 
+$("resumen-mes-label").addEventListener("click", () => {
+  const input = $("selector-mes-input");
+  input.value = mesActual;
+  input.max = MES_HOY;
+  if (input.showPicker) input.showPicker(); else input.click();
+});
+$("selector-mes-input").addEventListener("change", (e) => { if (e.target.value) irAMes(e.target.value); });
+
 async function cargarResumenYLista() {
   $("mes-siguiente").disabled = mesActual >= MES_HOY;
   const mes = mesActual;
   try {
-    const [resumen, lista] = await Promise.all([llamar("resumen", { mes }), llamar("listar", { mes })]);
-    $("resumen-mes-label").textContent = mes === MES_HOY ? `Este mes (${mes})` : mes;
+    const [resumen, lista, conc] = await Promise.all([
+      llamar("resumen", { mes }), llamar("listar", { mes }), llamar("conciliacion", { mes }),
+    ]);
+    if (mes !== mesActual) return; // el usuario ya cambio de mes de nuevo mientras esto cargaba
+
+    $("devolver-total").textContent = resumen.por_devolver.n > 0
+      ? "USD " + resumen.por_devolver.usd.toFixed(2) : "Al dia, nada pendiente";
+
     $("resumen-total").textContent = "USD " + resumen.gasto.usd.toFixed(2) + " aprox.";
     let detalle = "";
     ["PEN", "USD", "EUR"].forEach((m) => {
       if (resumen.gasto[m]) detalle += `<div class="resumen-fila"><span>${m}</span><span>${resumen.gasto[m].toFixed(2)}</span></div>`;
     });
-    if (resumen.por_devolver.n > 0) {
-      detalle += `<div class="resumen-fila"><span>Por devolverte</span><span>USD ${resumen.por_devolver.usd.toFixed(2)}</span></div>`;
-    }
     $("resumen-detalle").innerHTML = detalle;
+
+    const sinFactura = conc.movimientos_sin_factura.length;
+    const sinMovimiento = conc.gastos_sin_movimiento.length;
+    const estado = $("conciliacion-estado");
+    if (sinFactura === 0 && sinMovimiento === 0) {
+      estado.className = "ok";
+      estado.textContent = "✓ Mes conciliado: todo el banco tiene factura";
+    } else {
+      estado.className = "pendiente";
+      const partes = [];
+      if (sinFactura) partes.push(`${sinFactura} movimiento${sinFactura === 1 ? "" : "s"} sin factura`);
+      if (sinMovimiento) partes.push(`${sinMovimiento} factura${sinMovimiento === 1 ? "" : "s"} sin movimiento`);
+      estado.textContent = "⚠ " + partes.join(", ");
+    }
 
     const cont = $("lista-compras");
     if (!lista.compras.length) {

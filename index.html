@@ -15,7 +15,8 @@
 <section id="pantalla-clave">
   <img class="logo" src="icons/icon-192.png" alt="">
   <h1>Compras AUGEO</h1>
-  <p>Ingresa la clave del sistema para entrar</p>
+  <p>Sistema interno de AUGEO INVESTMENTS E.I.R.L. para registrar las compras de la empresa con foto y
+     consultar el resumen de gastos. Ingresa la clave que te dieron para entrar.</p>
   <form id="form-clave">
     <input class="campo" type="password" id="input-clave" placeholder="Clave" autocomplete="off" required>
     <div class="error-texto" id="error-clave"></div>
@@ -33,14 +34,21 @@
     <div class="aviso-offline oculto" id="aviso-offline">📡 Sin conexion — lo que registres se guarda y se sube solo despues.</div>
     <div class="aviso-cola oculto" id="aviso-cola"></div>
 
+    <div class="tarjeta" id="tarjeta-devolver">
+      <h2>Por devolverte (todos los meses)</h2>
+      <p class="resumen-total" id="devolver-total">—</p>
+    </div>
+
     <div class="tarjeta" id="tarjeta-resumen">
       <div class="selector-mes">
         <button id="mes-anterior" title="Mes anterior">‹</button>
-        <h2 id="resumen-mes-label">Este mes</h2>
+        <button id="resumen-mes-label" title="Elegir mes">Este mes</button>
         <button id="mes-siguiente" title="Mes siguiente">›</button>
       </div>
+      <input type="month" id="selector-mes-input" class="oculto">
       <p class="resumen-total" id="resumen-total">—</p>
       <div id="resumen-detalle"></div>
+      <div id="conciliacion-estado"></div>
     </div>
 
     <div class="tarjeta">

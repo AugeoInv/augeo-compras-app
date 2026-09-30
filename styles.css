@@ -119,12 +119,19 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 .tarjeta h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave); margin: 0 0 10px; }
 
 .selector-mes { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.selector-mes h2 { margin: 0; }
 .selector-mes button {
-  background: var(--fondo); border: none; color: var(--azul); font-size: 18px; font-weight: 700;
-  width: 30px; height: 30px; border-radius: 8px; line-height: 1;
+  background: var(--fondo); border: none; color: var(--azul); font-weight: 700;
+  border-radius: 8px; line-height: 1;
 }
+.selector-mes #mes-anterior, .selector-mes #mes-siguiente { font-size: 18px; width: 30px; height: 30px; }
 .selector-mes button:disabled { opacity: .35; }
+#resumen-mes-label {
+  font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave);
+  padding: 6px 10px; text-decoration: underline dotted;
+}
+#conciliacion-estado { font-size: 13px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--borde); }
+#conciliacion-estado.ok { color: #1a8a4a; }
+#conciliacion-estado.pendiente { color: #7a5b00; }
 
 .resumen-total { font-size: 28px; font-weight: 700; margin: 0; }
 .resumen-fila { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-top: 1px solid var(--borde); }
