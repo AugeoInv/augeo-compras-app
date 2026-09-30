@@ -34,7 +34,11 @@
     <div class="aviso-cola oculto" id="aviso-cola"></div>
 
     <div class="tarjeta" id="tarjeta-resumen">
-      <h2 id="resumen-mes-label">Este mes</h2>
+      <div class="selector-mes">
+        <button id="mes-anterior" title="Mes anterior">‹</button>
+        <h2 id="resumen-mes-label">Este mes</h2>
+        <button id="mes-siguiente" title="Mes siguiente">›</button>
+      </div>
       <p class="resumen-total" id="resumen-total">—</p>
       <div id="resumen-detalle"></div>
     </div>
@@ -57,7 +61,7 @@
     <div class="captura-zona" id="captura-zona">
       <span class="icono">📷</span>
       <div>Toca para tomar la foto de la factura o boleta</div>
-      <input type="file" accept="image/*" capture="environment" id="input-foto" class="oculto">
+      <input type="file" accept="image/*,application/pdf" capture="environment" id="input-foto" class="oculto">
     </div>
 
     <div class="estado-lectura oculto" id="estado-lectura">

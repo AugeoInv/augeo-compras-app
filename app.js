@@ -212,11 +212,27 @@ function formatoMoneda(n, moneda) {
   return `${moneda} ${Number(n).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+const MES_HOY = hoyIso().slice(0, 7);
+let mesActual = MES_HOY;
+
+function desplazarMes(delta) {
+  const [a, m] = mesActual.split("-").map(Number);
+  const d = new Date(a, m - 1 + delta, 1);
+  const nuevo = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  if (nuevo > MES_HOY) return; // no tiene sentido navegar al futuro
+  mesActual = nuevo;
+  cargarResumenYLista();
+}
+
+$("mes-anterior").addEventListener("click", () => desplazarMes(-1));
+$("mes-siguiente").addEventListener("click", () => desplazarMes(1));
+
 async function cargarResumenYLista() {
+  $("mes-siguiente").disabled = mesActual >= MES_HOY;
+  const mes = mesActual;
   try {
-    const mes = hoyIso().slice(0, 7);
     const [resumen, lista] = await Promise.all([llamar("resumen", { mes }), llamar("listar", { mes })]);
-    $("resumen-mes-label").textContent = "Este mes (" + mes + ")";
+    $("resumen-mes-label").textContent = mes === MES_HOY ? `Este mes (${mes})` : mes;
     $("resumen-total").textContent = "USD " + resumen.gasto.usd.toFixed(2) + " aprox.";
     let detalle = "";
     ["PEN", "USD", "EUR"].forEach((m) => {
@@ -265,7 +281,7 @@ function abrirRegistro() {
   $("c-fecha").value = hoyIso();
   llenarFormularioConConfig();
   $("captura-zona").classList.remove("tiene-foto");
-  $("captura-zona").innerHTML = '<span class="icono">📷</span><div>Toca para tomar la foto de la factura o boleta</div><input type="file" accept="image/*" capture="environment" id="input-foto" class="oculto">';
+  $("captura-zona").innerHTML = '<span class="icono">📷</span><div>Toca para tomar la foto de la factura o boleta</div><input type="file" accept="image/*,application/pdf" capture="environment" id="input-foto" class="oculto">';
   $("input-foto").addEventListener("change", onFotoSeleccionada);
   $("estado-lectura").classList.add("oculto");
   $("pantalla-registro").classList.remove("oculto");
@@ -289,9 +305,11 @@ async function onFotoSeleccionada(e) {
   const zona = $("captura-zona");
   zona.classList.add("tiene-foto");
   const url = URL.createObjectURL(file);
-  zona.innerHTML = `<img src="${url}" alt="">`;
+  zona.innerHTML = fotoActual.mime === "application/pdf"
+    ? `<div class="pdf-preview">📄 ${escaparHtml(file.name)}</div>`
+    : `<img src="${url}" alt="">`;
   const nuevoInput = document.createElement("input");
-  nuevoInput.type = "file"; nuevoInput.accept = "image/*"; nuevoInput.capture = "environment";
+  nuevoInput.type = "file"; nuevoInput.accept = "image/*,application/pdf"; nuevoInput.capture = "environment";
   nuevoInput.id = "input-foto"; nuevoInput.className = "oculto";
   zona.appendChild(nuevoInput);
   nuevoInput.addEventListener("change", onFotoSeleccionada);

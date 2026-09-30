@@ -118,6 +118,14 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 
 .tarjeta h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave); margin: 0 0 10px; }
 
+.selector-mes { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.selector-mes h2 { margin: 0; }
+.selector-mes button {
+  background: var(--fondo); border: none; color: var(--azul); font-size: 18px; font-weight: 700;
+  width: 30px; height: 30px; border-radius: 8px; line-height: 1;
+}
+.selector-mes button:disabled { opacity: .35; }
+
 .resumen-total { font-size: 28px; font-weight: 700; margin: 0; }
 .resumen-fila { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-top: 1px solid var(--borde); }
 .resumen-fila:first-of-type { border-top: none; }
@@ -158,6 +166,7 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 }
 .captura-zona.tiene-foto { padding: 0; border: none; overflow: hidden; }
 .captura-zona img { width: 100%; display: block; max-height: 300px; object-fit: contain; background: #000; }
+.pdf-preview { padding: 30px 16px; text-align: center; font-size: 14px; color: var(--texto); background: var(--fondo); word-break: break-all; }
 .captura-zona .icono { font-size: 40px; display: block; margin-bottom: 8px; }
 
 .estado-lectura { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--azul); margin-bottom: 14px; }
