@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consulta Contador - AUGEO</title>
+<meta name="theme-color" content="#131629">
+<link rel="icon" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<section id="pantalla-clave">
+  <img class="logo" src="icons/icon-192.png" alt="">
+  <h1>Consulta — AUGEO</h1>
+  <p>Acceso de solo consulta para el contador de AUGEO INVESTMENTS E.I.R.L.: buscar compras, ver comprobantes
+     y el estado de conciliación bancaria. Esta clave nunca registra, edita ni borra nada.</p>
+  <form id="form-clave">
+    <input class="campo" type="password" id="input-clave" placeholder="Clave" autocomplete="off" required>
+    <div class="error-texto" id="error-clave"></div>
+    <button class="boton-primario" type="submit" id="boton-entrar">Entrar</button>
+  </form>
+</section>
+
+<div id="app" class="oculto">
+  <header class="app-bar">
+    <h1>Consulta — AUGEO</h1>
+    <div class="app-bar-acciones">
+      <button id="boton-salir" title="Cerrar sesion">⏻</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs-panel" id="panel-tabs">
+      <button type="button" class="tab-panel-btn activo" data-vista="compras">Compras</button>
+      <button type="button" class="tab-panel-btn" data-vista="movimientos">Movimientos (EECC)</button>
+    </div>
+
+    <div class="kpis-panel">
+      <div class="kpi-panel">
+        <div class="kpi-panel-etiqueta">Gasto del mes</div>
+        <div class="kpi-panel-valor" id="panel-kpi-gasto">—</div>
+      </div>
+      <div class="kpi-panel">
+        <div class="kpi-panel-etiqueta">Por devolver</div>
+        <div class="kpi-panel-valor" id="panel-kpi-devolver">—</div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Conciliación por mes</h2>
+      <div class="meses-panel" id="panel-meses">Cargando…</div>
+    </div>
+
+    <div class="campo-grupo">
+      <input class="campo" type="text" id="panel-buscar" placeholder="Buscar por proveedor, N° de comprobante o concepto…">
+    </div>
+
+    <div class="tarjeta">
+      <h2 id="panel-desglose-titulo">Gasto por categoría</h2>
+      <div id="panel-desglose"></div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tabla-header-fila">
+        <h2 style="margin:0" id="panel-lista-titulo">Compras</h2>
+        <span class="compra-meta" id="panel-contexto"></span>
+      </div>
+      <div id="panel-lista"><div class="vacio">Cargando…</div></div>
+    </div>
+
+    <div class="tarjeta oculto" id="panel-detalle">
+      <h2>Detalle</h2>
+      <div id="panel-detalle-campos"></div>
+      <div class="voucher-caja oculto" id="panel-voucher-caja">
+        <div>
+          <div class="compra-proveedor" id="panel-voucher-nombre">—</div>
+          <div class="compra-meta">Sustento guardado en Drive</div>
+        </div>
+        <a class="boton-secundario" id="panel-voucher-link" href="#" target="_blank" rel="noopener">Ver comprobante</a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast" class="toast oculto"></div>
+
+<script src="contador.js"></script>
+</body>
+</html>
