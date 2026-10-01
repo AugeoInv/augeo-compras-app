@@ -196,14 +196,60 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 }
 .fab:active { background: #00d8b9; }
 
-/* ---------- pantallas a pantalla completa (registro / editar / resolver / importar / devolver) ---------- */
-#pantalla-registro, #pantalla-editar, #pantalla-resolver, #pantalla-importar, #pantalla-devolver {
+/* ---------- pantallas a pantalla completa (registro / editar / resolver / importar / devolver / panel) ---------- */
+#pantalla-registro, #pantalla-editar, #pantalla-resolver, #pantalla-importar, #pantalla-devolver, #pantalla-panel {
   position: fixed; inset: 0; background: var(--fondo); z-index: 20;
   display: flex; flex-direction: column;
 }
-#pantalla-registro main, #pantalla-editar main, #pantalla-resolver main, #pantalla-importar main, #pantalla-devolver main {
+#pantalla-registro main, #pantalla-editar main, #pantalla-resolver main, #pantalla-importar main, #pantalla-devolver main, #pantalla-panel main {
   flex: 1; overflow-y: auto; padding-bottom: 30px;
 }
+
+/* ---------- panel de consulta ---------- */
+.tabs-panel { display: flex; gap: 6px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 4px; margin-bottom: 14px; }
+.tab-panel-btn {
+  flex: 1; border: none; background: transparent; color: var(--texto-suave); font: inherit; font-size: 13px; font-weight: 600;
+  padding: 8px 10px; border-radius: 9px;
+}
+.tab-panel-btn.activo { background: var(--azul); color: #fff; }
+
+.kpis-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.kpi-panel { background: var(--tarjeta); border-radius: var(--radio); padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.kpi-panel-etiqueta { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave); font-weight: 600; }
+.kpi-panel-valor { font-size: 18px; font-weight: 700; margin-top: 4px; }
+
+.meses-panel { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.mes-panel-pill {
+  flex-shrink: 0; border: 1px solid var(--borde); background: var(--fondo); border-radius: 10px;
+  padding: 8px 12px; text-align: left; font: inherit; color: inherit; min-width: 118px;
+}
+.mes-panel-pill.activo { outline: 2px solid var(--azul); outline-offset: -1px; }
+.mes-panel-pill .mp-nombre { font-weight: 600; font-size: 12.5px; display: block; }
+.mes-panel-pill .mp-estado { font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; }
+.mes-panel-pill .mp-estado.ok { color: #1a8a4a; }
+.mes-panel-pill .mp-estado.pendiente { color: #7a5b00; }
+
+.desglose-fila { display: grid; grid-template-columns: 90px 1fr 64px; align-items: center; gap: 8px; font-size: 12.5px; padding: 4px 0; }
+.desglose-fila .df-nombre { color: var(--texto-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.desglose-barra-pista { background: var(--fondo); border-radius: 6px; height: 7px; overflow: hidden; }
+.desglose-barra { height: 100%; background: var(--cian); }
+.desglose-fila .df-monto { text-align: right; color: var(--texto-suave); }
+
+.movimiento-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--borde); gap: 10px; cursor: pointer; }
+.movimiento-item:first-child { border-top: none; }
+.movimiento-item:active { background: var(--fondo); }
+.movimiento-item .mi-desc { font-weight: 600; font-size: 14px; }
+.movimiento-item .mi-monto { font-weight: 700; font-size: 14px; white-space: nowrap; }
+.pill.ok { background: #e6f6ec; color: #1a8a4a; }
+
+.voucher-caja {
+  margin-top: 10px; border: 1px dashed var(--borde); border-radius: 12px; padding: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--fondo);
+}
+
+.resumen-fila-ancha { padding: 6px 0; border-top: 1px solid var(--borde); font-size: 14px; }
+.resumen-fila-ancha span { display: block; }
+.resumen-fila-ancha span:first-child { font-size: 12px; color: var(--texto-suave); margin-bottom: 2px; }
 
 .captura-zona {
   border: 2px dashed var(--borde); border-radius: var(--radio);

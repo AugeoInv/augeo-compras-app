@@ -28,6 +28,7 @@
   <header class="app-bar">
     <h1>Compras AUGEO</h1>
     <div class="app-bar-acciones">
+      <button id="boton-abrir-panel" title="Panel de consulta">📊</button>
       <button id="boton-importar-eecc" title="Importar estado de cuenta">🏦</button>
       <button id="boton-salir" title="Cerrar sesion">⏻</button>
     </div>
@@ -274,6 +275,65 @@
     <button class="boton-secundario" id="boton-exportar-devolucion" type="button">📄 Exportar</button>
     <button class="boton-primario" id="boton-confirmar-devolver" type="button">✓ Marcar pagado</button>
   </div>
+</section>
+
+<section id="pantalla-panel" class="oculto">
+  <header class="app-bar">
+    <h1>Panel de consulta</h1>
+    <button id="boton-cerrar-panel">✕</button>
+  </header>
+  <main>
+    <div class="tabs-panel" id="panel-tabs">
+      <button type="button" class="tab-panel-btn activo" data-vista="compras">Compras</button>
+      <button type="button" class="tab-panel-btn" data-vista="movimientos">Movimientos (EECC)</button>
+    </div>
+
+    <div class="kpis-panel">
+      <div class="kpi-panel">
+        <div class="kpi-panel-etiqueta">Gasto del mes</div>
+        <div class="kpi-panel-valor" id="panel-kpi-gasto">—</div>
+      </div>
+      <div class="kpi-panel">
+        <div class="kpi-panel-etiqueta">Por devolver</div>
+        <div class="kpi-panel-valor" id="panel-kpi-devolver">—</div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Conciliación por mes</h2>
+      <div class="meses-panel" id="panel-meses">Cargando…</div>
+    </div>
+
+    <div class="campo-grupo">
+      <input class="campo" type="text" id="panel-buscar" placeholder="Buscar por proveedor, N° de comprobante o concepto…">
+    </div>
+
+    <div class="tarjeta">
+      <h2 id="panel-desglose-titulo">Gasto por categoría</h2>
+      <div id="panel-desglose"></div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tabla-header-fila">
+        <h2 style="margin:0" id="panel-lista-titulo">Compras</h2>
+        <span class="compra-meta" id="panel-contexto"></span>
+      </div>
+      <div id="panel-lista"><div class="vacio">Cargando…</div></div>
+    </div>
+
+    <div class="tarjeta oculto" id="panel-detalle">
+      <h2>Detalle</h2>
+      <div id="panel-detalle-campos"></div>
+      <div class="voucher-caja oculto" id="panel-voucher-caja">
+        <div>
+          <div class="compra-proveedor" id="panel-voucher-nombre">—</div>
+          <div class="compra-meta">Sustento guardado en Drive</div>
+        </div>
+        <a class="boton-secundario" id="panel-voucher-link" href="#" target="_blank" rel="noopener">Ver comprobante</a>
+      </div>
+      <button class="boton-primario" id="panel-boton-accion" type="button" style="margin-top:12px; width:100%"></button>
+    </div>
+  </main>
 </section>
 
 <section id="pantalla-importar" class="oculto">
