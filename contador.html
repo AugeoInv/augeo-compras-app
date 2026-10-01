@@ -7,13 +7,13 @@
 <meta name="theme-color" content="#131629">
 <link rel="icon" href="icons/favicon.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="contador.css">
 </head>
-<body>
+<body class="pagina-contador">
 
 <section id="pantalla-clave">
   <img class="logo" src="icons/icon-192.png" alt="">
-  <h1>Consulta — AUGEO</h1>
+  <h1>AUGEO · Panel del Contador</h1>
   <p>Acceso de solo consulta para el contador de AUGEO INVESTMENTS E.I.R.L.: buscar compras, ver comprobantes
      y el estado de conciliación bancaria. Esta clave nunca registra, edita ni borra nada.</p>
   <form id="form-clave">
@@ -25,9 +25,15 @@
 
 <div id="app" class="oculto">
   <header class="app-bar">
-    <h1>Consulta — AUGEO</h1>
+    <div class="marca">
+      <img class="isotipo" src="icons/icon-192.png" alt="">
+      <div>
+        <h1>AUGEO · Panel del Contador</h1>
+        <p>Buscar un gasto, ver su sustento y el estado de conciliación por mes.</p>
+      </div>
+    </div>
     <div class="app-bar-acciones">
-      <button id="boton-salir" title="Cerrar sesion">⏻</button>
+      <button id="boton-salir">Cerrar sesión</button>
     </div>
   </header>
 
@@ -45,6 +51,14 @@
       <div class="kpi-panel">
         <div class="kpi-panel-etiqueta">Por devolver</div>
         <div class="kpi-panel-valor" id="panel-kpi-devolver">—</div>
+      </div>
+      <div class="kpi-panel" id="panel-kpi-sinfactura-caja">
+        <div class="kpi-panel-etiqueta">Movimientos sin factura</div>
+        <div class="kpi-panel-valor" id="panel-kpi-sinfactura">—</div>
+      </div>
+      <div class="kpi-panel" id="panel-kpi-sinmovimiento-caja">
+        <div class="kpi-panel-etiqueta">Facturas sin movimiento</div>
+        <div class="kpi-panel-valor" id="panel-kpi-sinmovimiento">—</div>
       </div>
     </div>
 
@@ -69,9 +83,14 @@
       </div>
       <div id="panel-lista"><div class="vacio">Cargando…</div></div>
     </div>
+  </main>
 
-    <div class="tarjeta oculto" id="panel-detalle">
-      <h2>Detalle</h2>
+  <div class="detalle-fondo" id="panel-detalle-fondo">
+    <div id="panel-detalle">
+      <div class="detalle-cabecera">
+        <h2 style="margin:0">Detalle</h2>
+        <button type="button" id="panel-detalle-cerrar">✕</button>
+      </div>
       <div id="panel-detalle-campos"></div>
       <div class="voucher-caja oculto" id="panel-voucher-caja">
         <div>
@@ -81,7 +100,7 @@
         <a class="boton-secundario" id="panel-voucher-link" href="#" target="_blank" rel="noopener">Ver comprobante</a>
       </div>
     </div>
-  </main>
+  </div>
 </div>
 
 <div id="toast" class="toast oculto"></div>

@@ -1157,7 +1157,7 @@ async function abrirPanel() {
   panelMes = mesActual;
   $("panel-buscar").value = "";
   $("panel-buscar").placeholder = "Buscar por proveedor, N° de comprobante o concepto…";
-  $("panel-detalle").classList.add("oculto");
+  ocultarPanelDetalle();
   $("panel-lista-titulo").textContent = "Compras";
   $("panel-desglose-titulo").textContent = "Gasto por categoría";
   document.querySelectorAll(".tab-panel-btn").forEach((b) => b.classList.toggle("activo", b.dataset.vista === "compras"));
@@ -1171,8 +1171,18 @@ function cerrarPanel() {
   $("pantalla-panel").classList.add("oculto");
 }
 
+function ocultarPanelDetalle() {
+  $("panel-detalle-fondo").classList.remove("visible");
+}
+
+function mostrarPanelDetalleUI() {
+  $("panel-detalle-fondo").classList.add("visible");
+}
+
 $("boton-abrir-panel").addEventListener("click", abrirPanel);
 $("boton-cerrar-panel").addEventListener("click", cerrarPanel);
+$("panel-detalle-cerrar").addEventListener("click", ocultarPanelDetalle);
+$("panel-detalle-fondo").addEventListener("click", (e) => { if (e.target.id === "panel-detalle-fondo") ocultarPanelDetalle(); });
 
 document.querySelectorAll(".tab-panel-btn").forEach((b) => {
   b.addEventListener("click", async () => {
@@ -1186,7 +1196,7 @@ document.querySelectorAll(".tab-panel-btn").forEach((b) => {
     document.querySelectorAll(".tab-panel-btn").forEach((x) => x.classList.toggle("activo", x === b));
     $("panel-lista-titulo").textContent = panelVista === "compras" ? "Compras" : "Movimientos (EECC)";
     $("panel-desglose-titulo").textContent = panelVista === "compras" ? "Gasto por categoría" : "Movimientos por cuenta";
-    $("panel-detalle").classList.add("oculto");
+    ocultarPanelDetalle();
     await cargarPanelDatos();
   });
 });
@@ -1204,7 +1214,7 @@ async function cargarPanelMeses() {
       panelQuery = "";
       $("panel-buscar").value = "";
       document.querySelectorAll(".mes-panel-pill").forEach((b) => b.classList.toggle("activo", b === btn));
-      $("panel-detalle").classList.add("oculto");
+      ocultarPanelDetalle();
       await cargarPanelDatos();
     });
   });
@@ -1363,8 +1373,7 @@ function mostrarPanelDetalleCompra(c) {
   const boton = $("panel-boton-accion");
   boton.textContent = "✎ Editar esta compra";
   boton.onclick = () => { cerrarPanel(); abrirEditar(c); };
-  $("panel-detalle").classList.remove("oculto");
-  $("panel-detalle").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  mostrarPanelDetalleUI();
 }
 
 async function mostrarPanelDetalleMovimiento(m) {
@@ -1397,13 +1406,12 @@ async function mostrarPanelDetalleMovimiento(m) {
   const boton = $("panel-boton-accion");
   boton.textContent = "🔗 Vincular / editar este movimiento";
   boton.onclick = () => { cerrarPanel(); abrirResolver(m); };
-  $("panel-detalle").classList.remove("oculto");
-  $("panel-detalle").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  mostrarPanelDetalleUI();
 }
 
 $("panel-buscar").addEventListener("input", (e) => {
   panelQuery = e.target.value;
-  $("panel-detalle").classList.add("oculto");
+  ocultarPanelDetalle();
   if (panelVista === "compras") { if (panelComprasTodas) renderPanelListaCompras(); }
   else if (panelMovimientosTodas) renderPanelListaMovimientos();
 });

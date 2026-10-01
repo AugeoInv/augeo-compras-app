@@ -251,6 +251,31 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 .resumen-fila-ancha span { display: block; }
 .resumen-fila-ancha span:first-child { font-size: 12px; color: var(--texto-suave); margin-bottom: 2px; }
 
+/* El detalle de compra/movimiento se muestra como ventana flotante, no al final de la lista: con una lista
+   larga, antes había que bajar hasta el final de la pantalla para verlo despues de tocar una fila. */
+.detalle-fondo {
+  display: none; position: fixed; inset: 0; background: rgba(5,6,12,.5); z-index: 30;
+  align-items: flex-end; justify-content: center; padding: 0;
+}
+.detalle-fondo.visible { display: flex; }
+#panel-detalle {
+  background: var(--tarjeta); border-radius: var(--radio) var(--radio) 0 0; padding: 18px 16px calc(env(safe-area-inset-bottom) + 18px);
+  width: 100%; max-width: 640px; max-height: 85vh; overflow-y: auto; box-shadow: 0 -4px 24px rgba(0,0,0,.2);
+}
+.detalle-cabecera { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.detalle-cabecera button {
+  background: var(--fondo); border: none; color: var(--texto-suave); width: 30px; height: 30px; border-radius: 50%; font-size: 16px;
+}
+
+/* En pantallas anchas (computadora), el panel de consulta aprovecha el ancho en vez de quedar en una columna
+   angosta pensada para celular; y el detalle aparece centrado como ventana, no pegado abajo. */
+@media (min-width: 860px) {
+  #pantalla-panel main, body.pagina-contador main { max-width: 980px; }
+  .kpis-panel { grid-template-columns: repeat(4, 1fr); }
+  .detalle-fondo { align-items: center; padding: 20px; }
+  #panel-detalle { border-radius: var(--radio); max-height: 80vh; }
+}
+
 .captura-zona {
   border: 2px dashed var(--borde); border-radius: var(--radio);
   padding: 30px 16px; text-align: center; color: var(--texto-suave);

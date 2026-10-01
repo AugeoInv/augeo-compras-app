@@ -109,6 +109,17 @@ let panelQuery = "";
 let panelComprasTodas = null;
 let panelMovimientosTodas = null;
 
+function ocultarPanelDetalle() {
+  $("panel-detalle-fondo").classList.remove("visible");
+}
+
+function mostrarPanelDetalleUI() {
+  $("panel-detalle-fondo").classList.add("visible");
+}
+
+$("panel-detalle-cerrar").addEventListener("click", ocultarPanelDetalle);
+$("panel-detalle-fondo").addEventListener("click", (e) => { if (e.target.id === "panel-detalle-fondo") ocultarPanelDetalle(); });
+
 document.querySelectorAll(".tab-panel-btn").forEach((b) => {
   b.addEventListener("click", async () => {
     if (b.dataset.vista === panelVista) return;
@@ -121,10 +132,12 @@ document.querySelectorAll(".tab-panel-btn").forEach((b) => {
     document.querySelectorAll(".tab-panel-btn").forEach((x) => x.classList.toggle("activo", x === b));
     $("panel-lista-titulo").textContent = panelVista === "compras" ? "Compras" : "Movimientos (EECC)";
     $("panel-desglose-titulo").textContent = panelVista === "compras" ? "Gasto por categoría" : "Movimientos por cuenta";
-    $("panel-detalle").classList.add("oculto");
+    ocultarPanelDetalle();
     await cargarPanelDatos();
   });
 });
+
+let panelConciliacionCache = {};
 
 async function cargarPanelMeses() {
   const meses = configCache && configCache.meses ? configCache.meses.slice(-6) : [MES_HOY];
@@ -139,19 +152,30 @@ async function cargarPanelMeses() {
       panelQuery = "";
       $("panel-buscar").value = "";
       document.querySelectorAll(".mes-panel-pill").forEach((b) => b.classList.toggle("activo", b === btn));
-      $("panel-detalle").classList.add("oculto");
+      ocultarPanelDetalle();
       await cargarPanelDatos();
     });
   });
   const resultados = await Promise.all(meses.map((m) => llamar("conciliacion", { mes: m }).catch(() => null)));
   resultados.forEach((r, i) => {
     if (!r) return;
+    panelConciliacionCache[meses[i]] = r;
     const pill = document.querySelector(`.mes-panel-pill[data-mes="${meses[i]}"] .mp-estado`);
     if (!pill) return;
     const total = r.movimientos_sin_factura.length + r.gastos_sin_movimiento.length;
     pill.className = "mp-estado " + (total === 0 ? "ok" : "pendiente");
     pill.textContent = total === 0 ? "✓ Conciliado" : `${total} por revisar`;
   });
+  if (panelConciliacionCache[panelMes]) pintarKpisConciliacion(panelConciliacionCache[panelMes]);
+}
+
+function pintarKpisConciliacion(c) {
+  const sf = c.movimientos_sin_factura.length;
+  const sm = c.gastos_sin_movimiento.length;
+  $("panel-kpi-sinfactura").textContent = sf;
+  $("panel-kpi-sinmovimiento").textContent = sm;
+  $("panel-kpi-sinfactura-caja").className = "kpi-panel" + (sf > 0 ? " warn" : " ok");
+  $("panel-kpi-sinmovimiento-caja").className = "kpi-panel" + (sm > 0 ? " warn" : " ok");
 }
 
 async function cargarPanelDatos() {
@@ -160,6 +184,11 @@ async function cargarPanelDatos() {
     const resumen = await llamar("resumen", { mes: panelMes });
     $("panel-kpi-gasto").textContent = "USD " + resumen.gasto.usd.toFixed(2);
     $("panel-kpi-devolver").textContent = "USD " + resumen.por_devolver.usd.toFixed(2);
+
+    if (!panelConciliacionCache[panelMes]) {
+      panelConciliacionCache[panelMes] = await llamar("conciliacion", { mes: panelMes }).catch(() => null);
+    }
+    if (panelConciliacionCache[panelMes]) pintarKpisConciliacion(panelConciliacionCache[panelMes]);
 
     if (panelVista === "compras") {
       if (!panelComprasTodas) {
@@ -295,8 +324,7 @@ function mostrarPanelDetalleCompra(c) {
   } else {
     $("panel-voucher-caja").classList.add("oculto");
   }
-  $("panel-detalle").classList.remove("oculto");
-  $("panel-detalle").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  mostrarPanelDetalleUI();
 }
 
 async function mostrarPanelDetalleMovimiento(m) {
@@ -326,13 +354,12 @@ async function mostrarPanelDetalleMovimiento(m) {
   } else {
     $("panel-voucher-caja").classList.add("oculto");
   }
-  $("panel-detalle").classList.remove("oculto");
-  $("panel-detalle").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  mostrarPanelDetalleUI();
 }
 
 $("panel-buscar").addEventListener("input", (e) => {
   panelQuery = e.target.value;
-  $("panel-detalle").classList.add("oculto");
+  ocultarPanelDetalle();
   if (panelVista === "compras") { if (panelComprasTodas) renderPanelListaCompras(); }
   else if (panelMovimientosTodas) renderPanelListaMovimientos();
 });
