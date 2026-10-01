@@ -309,14 +309,14 @@ function renderPanelDesgloseCuentas() {
 
 function mostrarPanelDetalleCompra(c) {
   $("panel-detalle-campos").innerHTML = `
-    <div class="resumen-fila"><span>Fecha</span><span>${c.fecha}</span></div>
-    <div class="resumen-fila"><span>Categoría</span><span>${escaparHtml(c.categoria)}</span></div>
-    <div class="resumen-fila"><span>Monto</span><span>${formatoMoneda(c.monto, c.moneda)}</span></div>
-    <div class="resumen-fila"><span>N° comprobante</span><span>${escaparHtml(c.comprobante || "—")}</span></div>
-    <div class="resumen-fila"><span>Método</span><span>${escaparHtml(c.metodo)}</span></div>
-    <div class="resumen-fila"><span>Estado</span><span>${pillEstadoCompraPanel(c)}</span></div>
-    ${c.concepto ? `<div class="resumen-fila-ancha"><span>Concepto</span><span>${escaparHtml(c.concepto)}</span></div>` : ""}
-    ${c.nota ? `<div class="resumen-fila-ancha"><span>Nota</span><span>${escaparHtml(c.nota)}</span></div>` : ""}
+    <div class="campo-detalle"><div class="etiqueta">Fecha</div><div class="val">${c.fecha}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">Categoría</div><div class="val">${escaparHtml(c.categoria)}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">Monto</div><div class="val">${formatoMoneda(c.monto, c.moneda)}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">N° comprobante</div><div class="val">${escaparHtml(c.comprobante || "—")}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">Método</div><div class="val">${escaparHtml(c.metodo)}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">Estado</div><div class="val">${pillEstadoCompraPanel(c)}</div></div>
+    ${c.concepto ? `<div class="campo-detalle ancho"><div class="etiqueta">Concepto</div><div class="val">${escaparHtml(c.concepto)}</div></div>` : ""}
+    ${c.nota ? `<div class="campo-detalle ancho"><div class="etiqueta">Nota</div><div class="val">${escaparHtml(c.nota)}</div></div>` : ""}
   `;
   if (c.foto) {
     $("panel-voucher-nombre").textContent = "Comprobante adjunto";
@@ -338,15 +338,15 @@ async function mostrarPanelDetalleMovimiento(m) {
   const gastoVinculado = m.gasto ? panelComprasTodas.find((g) => g.id === m.gasto) : null;
 
   $("panel-detalle-campos").innerHTML = `
-    <div class="resumen-fila"><span>Fecha</span><span>${m.fecha}</span></div>
-    <div class="resumen-fila"><span>Cuenta</span><span>${escaparHtml(m.cuenta)}</span></div>
-    <div class="resumen-fila"><span>Monto</span><span>${formatoMoneda(Math.abs(m.monto), m.moneda)}</span></div>
-    <div class="resumen-fila"><span>N° operación</span><span>${escaparHtml(m.operacion || "—")}</span></div>
-    <div class="resumen-fila"><span>¿Pide factura?</span><span>${m.necesita_factura ? "Sí" : "No"}</span></div>
-    <div class="resumen-fila"><span>Estado</span><span>${pillEstadoMovPanel(m)}</span></div>
-    <div class="resumen-fila-ancha"><span>Descripción</span><span>${escaparHtml(m.descripcion)}</span></div>
-    ${gastoVinculado ? `<div class="resumen-fila-ancha"><span>Vinculado a</span><span>${escaparHtml(gastoVinculado.proveedor)} — ${formatoMoneda(gastoVinculado.monto, gastoVinculado.moneda)}</span></div>` : ""}
-    ${m.nota ? `<div class="resumen-fila-ancha"><span>Nota</span><span>${escaparHtml(m.nota)}</span></div>` : ""}
+    <div class="campo-detalle"><div class="etiqueta">Fecha</div><div class="val">${m.fecha}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">Cuenta</div><div class="val">${escaparHtml(m.cuenta)}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">Monto</div><div class="val">${formatoMoneda(Math.abs(m.monto), m.moneda)}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">N° operación</div><div class="val">${escaparHtml(m.operacion || "—")}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">¿Pide factura?</div><div class="val">${m.necesita_factura ? "Sí" : "No"}</div></div>
+    <div class="campo-detalle"><div class="etiqueta">Estado</div><div class="val">${pillEstadoMovPanel(m)}</div></div>
+    <div class="campo-detalle ancho"><div class="etiqueta">Descripción</div><div class="val">${escaparHtml(m.descripcion)}</div></div>
+    ${gastoVinculado ? `<div class="campo-detalle ancho"><div class="etiqueta">Vinculado a</div><div class="val">${escaparHtml(gastoVinculado.proveedor)} — ${formatoMoneda(gastoVinculado.monto, gastoVinculado.moneda)}</div></div>` : ""}
+    ${m.nota ? `<div class="campo-detalle ancho"><div class="etiqueta">Nota</div><div class="val">${escaparHtml(m.nota)}</div></div>` : ""}
   `;
   if (gastoVinculado && gastoVinculado.foto) {
     $("panel-voucher-nombre").textContent = "Comprobante de la compra vinculada";

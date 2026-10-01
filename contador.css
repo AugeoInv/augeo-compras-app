@@ -149,16 +149,28 @@ main { padding: 16px; max-width: 540px; margin: 0 auto; }
 .detalle-cabecera h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-soft); }
 .detalle-cabecera button { background: var(--surface-2); border: none; color: var(--text-soft); width: 30px; height: 30px; border-radius: 50%; font-size: 15px; }
 
-.resumen-fila { display: flex; justify-content: space-between; font-size: 14px; padding: 7px 0; border-top: 1px solid var(--border); }
-.resumen-fila:first-of-type { border-top: none; }
-.resumen-fila-ancha { padding: 7px 0; border-top: 1px solid var(--border); font-size: 14px; }
-.resumen-fila-ancha span { display: block; }
-.resumen-fila-ancha span:first-child { font-size: 11.5px; color: var(--text-soft); margin-bottom: 2px; }
+.detalle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 18px; margin-top: 4px; }
+@media (max-width: 560px) { .detalle-grid { grid-template-columns: repeat(2, 1fr); } }
+.campo-detalle .etiqueta { font-size: 11px; color: var(--text-soft); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; margin-bottom: 3px; }
+.campo-detalle .val { font-size: 13.5px; color: var(--text); }
+.campo-detalle.ancho { grid-column: 1 / -1; }
 
 .voucher-caja {
-  margin-top: 10px; border: 1px dashed var(--border); border-radius: 12px; padding: 12px;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface-2);
+  margin-top: 16px; border: 1px dashed var(--border); border-radius: 12px; padding: 14px;
+  display: flex; align-items: center; gap: 12px; background: var(--surface-2);
 }
+.voucher-icono {
+  width: 38px; height: 46px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--text-soft);
+}
+.voucher-texto { min-width: 0; flex: 1; }
+.voucher-texto .nombre { font-size: 13px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.voucher-texto .hint { font-size: 11.5px; color: var(--text-soft); margin-top: 2px; }
+.voucher-boton {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: 12.5px;
+  font-weight: 600; padding: 8px 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; text-decoration: none;
+}
+.voucher-boton:hover, .voucher-boton:active { border-color: var(--accent); color: var(--accent); }
 
 /* ---------- toast ---------- */
 .toast {
