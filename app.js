@@ -1330,7 +1330,7 @@ function renderPanelBarras(contId, entradas, vacio) {
     <div class="desglose-fila">
       <span class="df-nombre">${escaparHtml(nombre)}</span>
       <span class="desglose-barra-pista"><span class="desglose-barra" style="width:${Math.max(6, (usd / max) * 100)}%"></span></span>
-      <span class="df-monto">${usd.toFixed(2)}</span>
+      <span class="df-monto">USD ${usd.toFixed(2)}</span>
     </div>
   `).join("");
 }

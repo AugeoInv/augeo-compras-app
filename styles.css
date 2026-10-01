@@ -229,11 +229,11 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
 .mes-panel-pill .mp-estado.ok { color: #1a8a4a; }
 .mes-panel-pill .mp-estado.pendiente { color: #7a5b00; }
 
-.desglose-fila { display: grid; grid-template-columns: 90px 1fr 64px; align-items: center; gap: 8px; font-size: 12.5px; padding: 4px 0; }
+.desglose-fila { display: grid; grid-template-columns: 90px 1fr 88px; align-items: center; gap: 8px; font-size: 12.5px; padding: 4px 0; }
 .desglose-fila .df-nombre { color: var(--texto-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .desglose-barra-pista { background: var(--fondo); border-radius: 6px; height: 7px; overflow: hidden; }
 .desglose-barra { height: 100%; background: var(--cian); }
-.desglose-fila .df-monto { text-align: right; color: var(--texto-suave); }
+.desglose-fila .df-monto { text-align: right; color: var(--texto-suave); white-space: nowrap; }
 
 .movimiento-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--borde); gap: 10px; cursor: pointer; }
 .movimiento-item:first-child { border-top: none; }

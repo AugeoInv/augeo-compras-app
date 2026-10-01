@@ -184,6 +184,7 @@ async function cargarPanelDatos() {
     const resumen = await llamar("resumen", { mes: panelMes });
     $("panel-kpi-gasto").textContent = "USD " + resumen.gasto.usd.toFixed(2);
     $("panel-kpi-devolver").textContent = "USD " + resumen.por_devolver.usd.toFixed(2);
+    $("panel-kpi-devolver").parentElement.className = "kpi-panel" + (resumen.por_devolver.n > 0 ? " warn" : "");
 
     if (!panelConciliacionCache[panelMes]) {
       panelConciliacionCache[panelMes] = await llamar("conciliacion", { mes: panelMes }).catch(() => null);
@@ -284,7 +285,7 @@ function renderPanelBarras(contId, entradas, vacio) {
     <div class="desglose-fila">
       <span class="df-nombre">${escaparHtml(nombre)}</span>
       <span class="desglose-barra-pista"><span class="desglose-barra" style="width:${Math.max(6, (usd / max) * 100)}%"></span></span>
-      <span class="df-monto">${usd.toFixed(2)}</span>
+      <span class="df-monto">USD ${usd.toFixed(2)}</span>
     </div>
   `).join("");
 }

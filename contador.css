@@ -87,7 +87,6 @@ main { padding: 16px; max-width: 540px; margin: 0 auto; }
 .kpi-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radio); padding: 14px 16px; }
 .kpi-panel-etiqueta { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-soft); font-weight: 600; }
 .kpi-panel-valor { font-size: 19px; font-weight: 700; margin-top: 6px; color: var(--text); }
-.kpi-panel:has(#panel-kpi-devolver) .kpi-panel-valor { color: var(--warn); }
 .kpi-panel.ok .kpi-panel-valor { color: var(--ok); }
 .kpi-panel.warn .kpi-panel-valor { color: var(--warn); }
 
@@ -110,11 +109,11 @@ main { padding: 16px; max-width: 540px; margin: 0 auto; }
 .mes-panel-pill .mp-estado.pendiente { color: var(--warn); }
 
 /* ---------- desglose por categoria/cuenta ---------- */
-.desglose-fila { display: grid; grid-template-columns: 96px 1fr 68px; align-items: center; gap: 8px; font-size: 12.5px; padding: 5px 0; }
+.desglose-fila { display: grid; grid-template-columns: 96px 1fr 92px; align-items: center; gap: 8px; font-size: 12.5px; padding: 5px 0; }
 .desglose-fila .df-nombre { color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .desglose-barra-pista { background: var(--surface-2); border-radius: 6px; height: 7px; overflow: hidden; }
 .desglose-barra { height: 100%; background: var(--accent); }
-.desglose-fila .df-monto { text-align: right; color: var(--text-soft); }
+.desglose-fila .df-monto { text-align: right; color: var(--text-soft); white-space: nowrap; }
 
 /* ---------- lista de compras / movimientos ---------- */
 .tabla-header-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
